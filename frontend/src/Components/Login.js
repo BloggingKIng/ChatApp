@@ -33,10 +33,10 @@ export default function Login() {
             await axios.post("http://127.0.0.1:8000/auth/token/", data)
             .then((response)=>{
                 toast.success("Login successful");
-                navigate("/");
+                localStorage.setItem('loggedIn', true);
                 saveTokens(response.data.access, response.data.refresh);
                 console.log(response);
-                localStorage.setItem('loggedIn', true);
+                navigate("/");
             })
         } catch (error) {
             toast.error("Invalid credentials. Please try again.");

@@ -7,4 +7,5 @@ urlpatterns = [
     path('add_member/<int:room_id>/', views.add_member, name='add_member'),
     path('members/<int:id>/', views.group_members,name='members'),
     path('join_group/',views.join_group,name='join_group'),
+    path('user_details/',views.get_user_details, name="user")
 ]

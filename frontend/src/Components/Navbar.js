@@ -30,7 +30,7 @@ export default function Navbar() {
   }
   return (
     <>
-      <MDBNavbar expand='lg' dark bgColor='primary'>
+      <MDBNavbar expand='xl' dark bgColor='primary'>
         <MDBContainer fluid>
           
           <MDBNavbarBrand href='/' className='heading'>Echat</MDBNavbarBrand>

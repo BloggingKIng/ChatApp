@@ -7,14 +7,18 @@ import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import Home from './Components/Home';
 import Login from './Components/Login';
+import PrivateRoute from './PrivateRoutes';
 function App() {
+  const loggedIn = JSON.parse(localStorage.getItem('loggedIn'));
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/chatting/:groupid/" element={<Chat />} />
         <Route path='/register' element={<RegistrationForm />} />
         <Route path='/login' element={<Login />} />
-        <Route path='' element={<Home />} />
+        <Route path='/' element={<PrivateRoute isLoggedIn={loggedIn} />}> 
+          <Route path="/chatting/:groupid/" element={<Chat />} />
+          <Route path='/' element={<Home />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

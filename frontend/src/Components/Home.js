@@ -77,6 +77,7 @@ export default function Home() {
     toggleJoinGroupModal();
   };
 
+
   return (
     <>
     <Navbar />

@@ -20,7 +20,7 @@ class MembershipSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Membership
-        fields = ['user', 'room']
+        fields = ['user', 'room','is_admin']
 
 
 class MessageSerializer(serializers.ModelSerializer):

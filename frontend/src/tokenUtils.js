@@ -10,6 +10,6 @@ const saveTokens = (access, refresh) => {
 
 const getAccessToken = () => accessToken;
 
-const getRefreshToken = () => localStorage.getItem('refresh_token');
+const getRefreshToken = () => JSON.stringify(localStorage.getItem('refresh_token'));
 
 export { saveTokens, getAccessToken, getRefreshToken };

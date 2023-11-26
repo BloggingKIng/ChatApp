@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Room, Membership
-from .serializers import RoomSerializer, MembershipSerializer
+from .serializers import RoomSerializer, MembershipSerializer, UserSerializer
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -80,3 +80,11 @@ def join_group(request):
     room = Room.objects.get(id=group)
     Membership.objects.create(user=request.user, room=room)
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_details(request):
+    user = request.user
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
