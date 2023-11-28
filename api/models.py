@@ -24,8 +24,19 @@ class Membership(models.Model):
 class Message(models.Model):
     sender = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='messages')
-    content = models.TextField()
-    sent_date = models.DateTimeField(auto_now_add=True)
+    message = models.TextField()
+    message_type = models.CharField(max_length=30, default='text')
+    sentdate = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.sender.username} in {self.room.name}: {self.content}'
+        return f'{self.sender.username} in {self.room.name}: {self.message}'
+
+
+class Requests(models.Model):
+    requester = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    request_message = models.TextField()
+    declined = models.BooleanField(default=False)
+    request_type = models.CharField(max_length=30)
+    sentdate = models.DateTimeField(auto_now_add=True)
+    accepted = models.BooleanField(default=False)

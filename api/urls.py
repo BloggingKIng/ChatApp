@@ -7,5 +7,9 @@ urlpatterns = [
     path('add_member/<int:room_id>/', views.add_member, name='add_member'),
     path('members/<int:id>/', views.group_members,name='members'),
     path('join_group/',views.join_group,name='join_group'),
-    path('user_details/',views.get_user_details, name="user")
+    path('user_details/',views.get_user_details, name="user"),
+    path('messages/',views.get_group_messages,name='messages'),
+    path('request-join/',views.request_group_membership,name='request_join'),
+    path('requests/',views.get_room_requests,name='requests'),
+    path('accept_decline_request/',views.accept_or_decline_request, name='accept_decline_request'),
 ]

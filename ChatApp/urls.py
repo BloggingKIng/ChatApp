@@ -26,6 +26,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth/",include('users.urls')),
     path('api/',include('api.urls')),
-    path("chatting/<str:room_name>/", TemplateView.as_view(template_name="index.html"), name="room"),
+    path("chatting/<int:room_name>", TemplateView.as_view(template_name="index.html"), name="room"),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

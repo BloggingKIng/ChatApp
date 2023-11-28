@@ -70,9 +70,10 @@ export default function Home() {
   const handleJoinGroup = () => {
     // Implement your logic for joining a group with the 'groupId'
     console.log(`Join group with ID: ${groupId}`);
-    api.post('/api/join_group/', {id: groupId})
+    api.post('/api/request-join/', {id: groupId})
     .then((response) => {
-      navigate(`/chatting/${groupId}/`)
+      // navigate(`/chatting/${groupId}/`)
+      toast.success('Successfully Requested Membership!')
     })
     toggleJoinGroupModal();
   };
@@ -81,6 +82,7 @@ export default function Home() {
   return (
     <>
     <Navbar />
+    <ToastContainer />
     <MDBContainer fluid className="py-5" style={{ backgroundColor: "#eee", height:'100vh' }}>
       <MDBRow style={{height:'90vh'}}>
         <MDBCol md="6" lg="5" xl="4" className="mb-4 mb-md-0">

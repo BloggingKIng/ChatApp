@@ -2,8 +2,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Room, Membership
-from .serializers import RoomSerializer, MembershipSerializer, UserSerializer
+from .models import Room, Membership, Message, Requests
+from .serializers import RoomSerializer, MembershipSerializer, UserSerializer, MessageSerializer, RequestSerializer
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -24,7 +24,7 @@ def create_group(request):
     serializer = RoomSerializer(data=request.data)
     if serializer.is_valid():
         room = serializer.save()
-        Membership.objects.create(user=request.user, room=room, is_admin=True)
+        Membership.objects.get_or_create(user=request.user, room=room, is_admin=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -64,6 +64,53 @@ def add_member(request, room_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def request_group_membership(request):
+    id = request.data['id']
+    try:
+        room = Room.objects.get(id=id)
+    except ObjectDoesNotExist:
+        return Response({'message':'Room with this id does not exist'},status=status.HTTP_404_NOT_FOUND)
+    req = Requests.objects.create(requester=request.user, room=room, request_message=f'{request.user.username} wants to join the group', request_type='request')
+    
+    return Response(status=status.HTTP_200_OK)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def accept_or_decline_request(request):
+    id = request.data['id']
+    action = request.data['action']
+    try:
+        req = Requests.objects.get(id=id)
+    except ObjectDoesNotExist:
+        return Response({'message':'Request with this id does not exist'},status=status.HTTP_404_NOT_FOUND)
+    if action == 'accept':
+        Membership.objects.get_or_create(user=req.requester, room=req.room, is_admin=False)
+        Message.objects.create(sender=req.requester, room=req.room, message=f'{req.requester.username} has joined the group', message_type='join')
+        req.accepted = True
+    else:
+        req.declined = True
+    req.save()
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def get_room_requests(request):
+    room_id = request.data['id']
+    try:
+        room = Room.objects.get(id=room_id)
+    except ObjectDoesNotExist:
+        return Response({'message':'Room with this id does not exist'},status=status.HTTP_404_NOT_FOUND)
+    membership = Membership.objects.get(user=request.user, room=room)
+    if membership.is_admin:
+        
+        requests = Requests.objects.filter(room=room, declined=False, accepted=False)
+        serializer = RequestSerializer(requests, many=True)
+        return Response(serializer.data)
+    else:
+        return Response({'message':'You are not an admin of this group'},status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def group_members(request,id):
     try:
         room = Room.objects.get(pk=id)
@@ -78,7 +125,7 @@ def group_members(request,id):
 def join_group(request):
     group = request.data['id']
     room = Room.objects.get(id=group)
-    Membership.objects.create(user=request.user, room=room)
+    Membership.objects.get_or_create(user=request.user, room=room)
     return Response(status=status.HTTP_200_OK)
 
 
@@ -88,3 +135,30 @@ def get_user_details(request):
     user = request.user
     serializer = UserSerializer(user)
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def get_membership_details(request):
+    room_id = request.data['id']
+    try:
+        room = Room.objects.get(id=room_id)
+        membership = Membership.objects.get(user=request.user, room=room)
+    except:
+        return Response({'message':'You are not a member of the group'},status=status.HTTP_401_UNAUTHORIZED)
+    serializer = MembershipSerializer(membership)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def get_group_messages(request):
+    id = request.data['id']
+    try:
+        room = Room.objects.get(id=id)
+        member =  Membership.objects.get(user=request.user, room=room)
+    except:
+        return Response({'message':'You are not a member of the group'},status=status.HTTP_401_UNAUTHORIZED)
+
+    messages = Message.objects.filter(room=room)
+    serializer = MessageSerializer(messages, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)

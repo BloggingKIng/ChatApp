@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Room, Membership, Message
+from .models import Room, Membership, Message, Requests
 from django.contrib.auth import get_user_model
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,4 +28,10 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'room', 'content', 'sent_date']
+        fields = ['id', 'sender', 'room', 'message', 'sentdate']
+
+class RequestSerializer(serializers.ModelSerializer):
+    requester = UserSerializer()
+    class Meta:
+        model = Requests
+        fields = ['id', 'requester', 'room', 'request_message', 'declined', 'request_type', 'sentdate','accepted']
