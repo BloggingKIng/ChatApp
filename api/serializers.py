@@ -28,7 +28,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'room', 'message', 'sentdate']
+        fields = '__all__'
 
 class RequestSerializer(serializers.ModelSerializer):
     requester = UserSerializer()

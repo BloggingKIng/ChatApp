@@ -208,9 +208,11 @@ def remove_message(request, message_id):
 
     if message.sender == request.user:
         message.message = 'This message was deleted by the sender!'
+        message.message_type = 'delete'
         message.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
     if Membership.objects.filter(user=request.user, room=message.room, is_admin=True).exists():
         message.message = 'This message was deleted by the admin!'
+        message.message_type = 'delete'
         message.save()
     return Response(status=status.HTTP_204_NO_CONTENT)

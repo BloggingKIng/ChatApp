@@ -107,6 +107,7 @@ export default function Chat() {
 
     chatSocket.onmessage = function (e) {
       const data = JSON.parse(e.data).message;
+      console.log("message")
       console.log(data);
       setMessages((prevMessages) => [...prevMessages, data]);
       scroller.current.scrollIntoView({
@@ -144,7 +145,6 @@ export default function Chat() {
       sentdate: new Date().toLocaleString(),
       room: window.location.href.split("/").reverse()[0],
     }
-    setMessages((prevMessages) => [...prevMessages, data]);
     const chatSocket = new WebSocket(
       `ws://127.0.0.1:8000/ws/chat/${window.location.href.split("/").reverse()[0]}/`
     );
@@ -154,6 +154,10 @@ export default function Chat() {
         JSON.stringify(data)
       );
     };
+
+    setTimeout(() => {
+      fetchMessages()
+    },500)
 
 
     // Clear input after sending message
@@ -187,6 +191,7 @@ export default function Chat() {
         fetchMembers();
       })
   }
+
 
   const handleLeave = async () => {
     await api.delete(`http://127.0.0.1:8000/api/leave-group/${window.location.href.split("/").reverse()[0]}/`)
@@ -250,7 +255,7 @@ export default function Chat() {
                       <p className="fw-bold mb-0" style={{ padding: '10px' }}>{data.sender.username === user.username ? `You (${data.sender.username})` : `${data.sender.full_name} (${data.sender.username})`}</p>
                       <p className="text-muted small mb-0" style={{ padding: '10px' }}>
                         <MDBIcon far icon="clock" /> {data.sent ? data.sentdate : new Date(data.sentdate).toLocaleString()}
-                      {hoveredMessageId === data.id && (data.sender.username === user.username || userIsAdmin(user.username)) && (
+                      {hoveredMessageId === data.id && (data.sender.username === user.username || userIsAdmin(user.username)) && (data.message_type !== 'delete') && (
                       <div
                         style={{
                          display:'inline-block',
