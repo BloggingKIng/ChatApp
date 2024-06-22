@@ -28,6 +28,7 @@ export default function Chat() {
   const [requests, setRequests] = useState([]);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const [dropdownMessageId, setDropdownMessageId] = useState(null);
+  const [adminUser, setAdminUser] = useState([]);
 
   const scroller = useRef(null);
   const navigator = useNavigate();
@@ -47,12 +48,24 @@ export default function Chat() {
     await api.post(`/api/members/${window.location.href.split("/").reverse()[0]}/`)
       .then((response) => {
         setMembers(response.data);
-
+        const adminUsers = [];
+        for (let member of response.data) {
+          if (member.is_admin === true) {
+            adminUsers.push(member.user.username);
+          }
+        }
+        setAdminUser(adminUsers);
+        console.log(adminUsers)
       })
       .catch((error) => {
         setEmpty(true);
       })
 
+
+  }
+
+  const userIsAdmin = (username) => {
+    return adminUser.includes(username);
   }
 
   const fetchRequests = async () => {
@@ -182,11 +195,10 @@ export default function Chat() {
 
   }
 
-  const handleDeleteMessage = (id) => {
-    // Implement the API call to delete the message here
-    // For now, we'll just filter it out from the messages list
-    setMessages(messages.filter(message => message.id !== id));
-    setDropdownMessageId(null);
+  const handleDeleteMessage = async(id) => {
+    await api.delete(`http://127.0.0.1:8000/api/remove-message/${id}/`)
+    .then((response) => { toast.success("Message Deleted!") })
+    .then(() => { fetchMessages() })
   };
 
   return (
@@ -238,7 +250,7 @@ export default function Chat() {
                       <p className="fw-bold mb-0" style={{ padding: '10px' }}>{data.sender.username === user.username ? `You (${data.sender.username})` : `${data.sender.full_name} (${data.sender.username})`}</p>
                       <p className="text-muted small mb-0" style={{ padding: '10px' }}>
                         <MDBIcon far icon="clock" /> {data.sent ? data.sentdate : new Date(data.sentdate).toLocaleString()}
-                      {hoveredMessageId === data.id && (
+                      {hoveredMessageId === data.id && (data.sender.username == user.username || userIsAdmin(user.username)) && (
                       <div
                         style={{
                          display:'inline-block',
@@ -247,7 +259,8 @@ export default function Chat() {
                          marginLeft:'10px',
                          cursor:'pointer'
                         }}
-                        onClick={() => setDropdownMessageId(id=>id===data.id?null:data.id)}
+                        onMouseEnter={() => setDropdownMessageId(id=>id===data.id?null:data.id)}
+                        onMouseLeave={() => setDropdownMessageId(null)}
                       >
                         <MDBIcon fas icon="ellipsis-v" />
                       </div>
@@ -262,12 +275,15 @@ export default function Chat() {
                     
                     {dropdownMessageId === data.id && (
                       <div
+                        onMouseEnter={() => setDropdownMessageId(data.id)}
+                        onMouseLeave={() => setDropdownMessageId(null)}
                         style={{
                           position: 'absolute',
-                          top: '30px',
-                          right: '10px',
+                          top: '27px',
+                          right: '15px',
                           backgroundColor: '#fff',
-                          border: '1px solid black',
+                          width:'300px',
+                          border: '1px solid #eee',
                           borderRadius: '4px',
                           boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
                           display:'flex',
@@ -275,12 +291,12 @@ export default function Chat() {
                         }}
                       >
                         <p
-                          style={{ margin: '10px', cursor: 'pointer' }}
+                          style={{ margin: '10px', cursor: 'pointer',textAlign:'center' }}
                           onClick={() => handleDeleteMessage(data.id)}
+                          className="dp-btn"
                         >
                           Delete
                         </p>
-                        {/* Add more dropdown items here if needed */}
                       </div>
                     )}
                   </MDBCard>
