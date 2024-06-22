@@ -188,8 +188,10 @@ def leave_group(request, room_id):
     
     if Membership.objects.filter(user=request.user, room=room, is_admin=True).exists():
         return Response({"detail": "You are the admin of this group. You can't leave the group."}, status=status.HTTP_403_FORBIDDEN)
+    
 
     Membership.objects.filter(user=request.user, room=room).delete()
+    Message.objects.create(sender=request.user, room=room, message=f'{request.user.username} has left the group', message_type='leave')
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['DELETE'])

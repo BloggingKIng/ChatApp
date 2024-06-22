@@ -13,6 +13,6 @@ urlpatterns = [
     path('requests/',views.get_room_requests,name='requests'),
     path('accept_decline_request/',views.accept_or_decline_request, name='accept_decline_request'),
     path('delete-group/',views.delete_group,name='delete_group'),
-    path('leave-group/',views.leave_group,name='leave_group'),
+    path('leave-group/<int:room_id>/',views.leave_group,name='leave_group'),
     path('remove-message/<int:message_id>/',views.remove_message,name='remove_message'),
 ]
