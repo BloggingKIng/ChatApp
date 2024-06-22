@@ -206,5 +206,11 @@ def remove_message(request, message_id):
         return Response({"detail": "You can't delete this message."}, status=status.HTTP_403_FORBIDDEN)
     
 
-    message.delete()
+    if message.sender == request.user:
+        message.message = 'This message was deleted by the sender!'
+        message.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    if Membership.objects.filter(user=request.user, room=message.room, is_admin=True).exists():
+        message.message = 'This message was deleted by the admin!'
+        message.save()
     return Response(status=status.HTTP_204_NO_CONTENT)

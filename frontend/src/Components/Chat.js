@@ -250,7 +250,7 @@ export default function Chat() {
                       <p className="fw-bold mb-0" style={{ padding: '10px' }}>{data.sender.username === user.username ? `You (${data.sender.username})` : `${data.sender.full_name} (${data.sender.username})`}</p>
                       <p className="text-muted small mb-0" style={{ padding: '10px' }}>
                         <MDBIcon far icon="clock" /> {data.sent ? data.sentdate : new Date(data.sentdate).toLocaleString()}
-                      {hoveredMessageId === data.id && (data.sender.username == user.username || userIsAdmin(user.username)) && (
+                      {hoveredMessageId === data.id && (data.sender.username === user.username || userIsAdmin(user.username)) && (
                       <div
                         style={{
                          display:'inline-block',
