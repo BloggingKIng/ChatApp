@@ -162,3 +162,47 @@ def get_group_messages(request):
     serializer = MessageSerializer(messages, many=True)
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_group(request, room_id):
+    try:
+        room = Room.objects.get(pk=room_id)
+    except Room.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if the user is an admin of the group
+    if not Membership.objects.filter(user=request.user, room=room, is_admin=True).exists():
+        return Response({"detail": "You are not the admin of this group."}, status=status.HTTP_403_FORBIDDEN)
+
+    room.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def leave_group(request, room_id):
+    try:
+        room = Room.objects.get(pk=room_id)
+    except Room.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    if Membership.objects.filter(user=request.user, room=room, is_admin=True).exists():
+        return Response({"detail": "You are the admin of this group. You can't leave the group."}, status=status.HTTP_403_FORBIDDEN)
+
+    Membership.objects.filter(user=request.user, room=room).delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_message(request, message_id):
+    try:
+        message = Message.objects.get(pk=message_id)
+    except Message.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    if message.sender != request.user and not Membership.objects.filter(user=request.user, room=message.room, is_admin=True).exists():
+        return Response({"detail": "You can't delete this message."}, status=status.HTTP_403_FORBIDDEN)
+    
+
+    message.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

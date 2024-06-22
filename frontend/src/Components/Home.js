@@ -104,11 +104,12 @@ export default function Home() {
                   className="p-2 border-bottom"
                 >
                   {groups.map((group) => (
-                    <Link to={`/chatting/${group.id}`} className="d-flex justify-content-center mb-4 text-center " style={{background:'#eee'}} key={group.id}>
+                    <div>
+                        <Link to={`/chatting/${group.id}`} className="d-flex justify-content-center mb-4 text-center " style={{background:'#eee'}} key={group.id}>
+                            <p className="fw-bold m-3 text-center align-self-center">{group.name}</p>
+                      </Link>
 
-                        <p className="fw-bold m-3 text-center align-self-center">{group.name}</p>
-
-                  </Link>
+                    </div>
                   ))
                 }
                   
