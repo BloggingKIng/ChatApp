@@ -17,6 +17,7 @@ import api from "../api";
 import './chat.css'
 import {toast, ToastContainer} from 'react-toastify'
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
@@ -52,18 +53,21 @@ export default function Chat() {
   
   }
 
-  const fetchRequests = async() => {
-    await api.post(`/api/requests/`,{id:window.location.href.split("/").reverse()[0]})
-    .then((response)=>{
+  const fetchRequests = async () => {
+    try {
+      const response = await api.post(`/api/requests/`, { id: window.location.href.split("/").reverse()[0] });
       setRequests(response.data);
-      console.log(response.data)
-      
-    })
-  }
-
-  useEffect(()=>{
-    setInterval(fetchRequests(),5000)
-  },[])
+      console.log(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+  useEffect(() => {
+    const intervalId = setInterval(fetchRequests, 5000);
+  
+    return () => clearInterval(intervalId);
+  }, []);
 
   const fetchUserDetails = async() => {
     await api.get(`/api/user_details/`)
@@ -97,10 +101,17 @@ export default function Chat() {
       chatSocket.onclose = function (e) {
         console.error("Chat socket closed unexpectedly");
       };
+
+      chatSocket.onerror = function (e) {
+        console.error(e)
+      }
       
       // Cleanup WebSocket connection on component unmount
       return () => {
         chatSocket.close();
+        chatSocket.onerror = function (e) {
+          console.error(e)
+        }
       
       };
   });
@@ -160,6 +171,13 @@ export default function Chat() {
     })
   }
 
+  const handleLeave = async() =>{ 
+    await api.delete(`http://127.0.0.1:8000/api/leave-group/${window.location.href.split("/").reverse()[0]}/`)
+    .then((response)=>{navigator("/")})
+    .catch((error)=>{console.log(error);toast.error(error.response.data.detail)})
+    
+  }
+
   return (
     <>
       <Navbar />
@@ -172,6 +190,9 @@ export default function Chat() {
             <h2 className="font-weight-bold mb-3 text-center text-center">
                Members
               </h2>
+              <MDBContainer style={{display:'flex',justifyContent:'center', marginTop:'10px',marginBottom:'10px'}}>
+                <button className="btn btn-danger" onClick={handleLeave}>Leave Group</button>
+              </MDBContainer>
           <MDBTypography listUnStyled className="mb-0">
           <li
                   className="p-2 border-bottom"
