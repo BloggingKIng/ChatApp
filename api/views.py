@@ -259,7 +259,7 @@ def remove_member(request):
         except:
             return Response({'message':'User or Room does not exist'},status=status.HTTP_404_NOT_FOUND)
         
-        message = Message.objects.create(sender=requesting_user, room=room, message=f'{requesting_user.username} has removed {user.username} from the group',message_type='member-remove')
+        message = Message.objects.create(sender=requesting_user, room=room, message=f'{requesting_user.username} has removed {user.username} from the group',message_type='member_remove')
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"chat_{room.id}",

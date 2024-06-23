@@ -126,12 +126,14 @@ export default function Chat() {
       else if (data.type === "member_remove"){
         console.log("member_remove")
         console.log(data)
+        console.log(user)
         if (data.deleted_guy === user.username) {
+          console.log("You have been removed from the group")
           toast.error("You have been removed from the group");
-          setMessages((prevMessages) => [...prevMessages, {message:   `You have been removed from the group  . You will be redirected to the home page in 10 seconds`, message_type: "delete"}]);
+          setMessages((prevMessages) => [...prevMessages, {message:   `You have been removed from the group by ${data.message.sender.username} . You will be redirected to the home page in 30 seconds`, message_type: "delete", sender: user}]);
           setTimeout(() => {
             navigator("/");
-          }, 10000);
+          }, 30000);
         }
         else{
           setMessages((prevMessages) => [...prevMessages, data.message]);
@@ -360,7 +362,7 @@ export default function Chat() {
                       </p>
                     </MDBCardHeader>
                     <MDBCardBody style={{ padding: '10px' }}>
-                      <p className="mb-0" style={data?.message_type === 'delete' ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : null}>
+                      <p className="mb-0" style={(data?.message_type === 'delete' ||  (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : null}>
                         {data?.message}
                       </p>
                     </MDBCardBody>
