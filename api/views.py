@@ -252,7 +252,7 @@ def remove_member(request):
     room_id = request.data['room_id']
     requesting_user = request.user
     user_is_admin = Membership.objects.filter(user=requesting_user, room=room_id, is_admin=True).exists()
-    if user_is_admin == True:
+    if user_is_admin == True and user_id != requesting_user.username:
         try:
             room = Room.objects.get(id=room_id)
             user = CustomUser.objects.get(username=user_id)
@@ -266,13 +266,16 @@ def remove_member(request):
         async_to_sync(channel_layer.group_send)(
             f"chat_{room.id}",
             {
-                "type": "message.member-remove",
+                "type": "message.remove",
                 "message_id": message.id,
-                "message": MessageSerializer(message).data
+                "message": MessageSerializer(message).data,
+                "deleted_guy": user.username
             }
         )
 
-
         return Response(status=status.HTTP_204_NO_CONTENT)
+    elif requesting_user.username == user_id:
+        return Response({'detail':'You can not remove yourself. Please leave instead!'},status=status.HTTP_401_UNAUTHORIZED)
+
     else:
         return Response({'detail':'You are not an admin of this group'},status=status.HTTP_401_UNAUTHORIZED)

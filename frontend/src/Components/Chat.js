@@ -22,6 +22,7 @@ export default function Chat() {
   const [roomDetails, setRoomDetails] = useState([]);
   const [deleteModal, setDeleteModal] = useState(false);
   const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const scroller = useRef(null);
   const navigator = useNavigate();
@@ -121,7 +122,17 @@ export default function Chat() {
               : msg
           )
         );
-      } else {
+      } 
+      else if (data.type === "member_remove"){
+        if (data.deleted_guy === user.username) {
+          navigator("/");
+        }
+        else{
+          setMessages((prevMessages) => [...prevMessages, data.message]);
+          fetchMembers();
+        }
+      }
+      else {
         setMessages((prevMessages) => [...prevMessages, data.message]);
       }
 
@@ -242,9 +253,19 @@ export default function Chat() {
   }
 
   const removeMember = async (username) => {
+    const newMembers = members.filter((member) => member.username !== username);
+    setMembers(newMembers);
     await api.post(`http://127.0.0.1:8000/api/remove-member/`, {username:username,room_id:window.location.href.split("/").reverse()[0] }).then((response) => {
       toast.success("Member Removed!");
+    }).catch((error) => {
+      toast.error(error.response.data?.detail);
     })
+    fetchMembers();
+    setLoading(false);
+  }
+
+  if (loading) {
+    return <h1>Loading...</h1>;
   }
 
 
@@ -283,12 +304,14 @@ export default function Chat() {
                           {member.user.username}
                           {member.is_admin ? " (Admin) " : ""}
                         </p>
-                        <p className="text-center align-self-center">({member.user.email})</p>
-                        {userIsAdmin(user.username) ? (
-                            <a className="text-danger" onClick={() => removeMember(member.user.username)} style={{ cursor: "pointer", textDecoration:'underline' }}>
-                              Remove
-                            </a>
-                          ):null}
+                        <span>
+                          <p className="text-center align-self-center m-0">({member.user.email})</p>
+                          {userIsAdmin(user.username) && user.username !== member.user.username ? (
+                              <a className="text-danger" onClick={() => removeMember(member.user.username)} style={{ cursor: "pointer", textDecoration:'underline' }}>
+                                Remove
+                              </a>
+                            ):null}
+                        </span>
                       </a>
                     ))}
                   </li>
@@ -313,7 +336,7 @@ export default function Chat() {
                       </p>
                       <p className="text-muted small mb-0" style={data?.message_type === 'delete' ? { display:'none' } : { padding: '10px'}}>
                         <MDBIcon far icon="clock" /> {data?.sent ? data?.sentdate : new Date(data?.sentdate).toLocaleString()}
-                      {hoveredMessageId === data?.id && (data?.sender.username === user.username || userIsAdmin(user.username)) && (data?.message_type !== 'delete') && (
+                      {hoveredMessageId === data?.id && (data?.sender.username === user.username || userIsAdmin(user.username)) && (data?.message_type == 'text') && (
                       <div
                         style={{
                          display:'inline-block',
@@ -331,7 +354,7 @@ export default function Chat() {
                       </p>
                     </MDBCardHeader>
                     <MDBCardBody style={{ padding: '10px' }}>
-                      <p className="mb-0" style={data?.message_type === 'delete' ? { color: 'red', fontStyle:'italic' } : null}>
+                      <p className="mb-0" style={data?.message_type === 'delete' ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : null}>
                         {data?.message}
                       </p>
                     </MDBCardBody>
