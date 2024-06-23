@@ -124,8 +124,14 @@ export default function Chat() {
         );
       } 
       else if (data.type === "member_remove"){
+        console.log("member_remove")
+        console.log(data)
         if (data.deleted_guy === user.username) {
-          navigator("/");
+          toast.error("You have been removed from the group");
+          setMessages((prevMessages) => [...prevMessages, {message:   `You have been removed from the group  . You will be redirected to the home page in 10 seconds`, message_type: "delete"}]);
+          setTimeout(() => {
+            navigator("/");
+          }, 10000);
         }
         else{
           setMessages((prevMessages) => [...prevMessages, data.message]);

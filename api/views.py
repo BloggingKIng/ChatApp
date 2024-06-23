@@ -259,8 +259,6 @@ def remove_member(request):
         except:
             return Response({'message':'User or Room does not exist'},status=status.HTTP_404_NOT_FOUND)
         
-        membership = Membership.objects.get(user=user, room=room)
-        membership.delete()
         message = Message.objects.create(sender=requesting_user, room=room, message=f'{requesting_user.username} has removed {user.username} from the group',message_type='member-remove')
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -272,7 +270,8 @@ def remove_member(request):
                 "deleted_guy": user.username
             }
         )
-
+        membership = Membership.objects.get(user=user, room=room)
+        membership.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     elif requesting_user.username == user_id:
         return Response({'detail':'You can not remove yourself. Please leave instead!'},status=status.HTTP_401_UNAUTHORIZED)
