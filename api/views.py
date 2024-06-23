@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Room, Membership, Message, Requests
 from .serializers import RoomSerializer, MembershipSerializer, UserSerializer, MessageSerializer, RequestSerializer
 from django.core.exceptions import ObjectDoesNotExist
-
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -186,16 +187,19 @@ def leave_group(request, room_id):
     except Room.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
     
+
     if Membership.objects.filter(user=request.user, room=room, is_admin=True).exists():
-        return Response({"detail": "You are the admin of this group. You can't leave the group."}, status=status.HTTP_403_FORBIDDEN)
+        no_of_admins = Membership.objects.filter(room=room, is_admin=True).count()
+        if no_of_admins == 1:
+            return Response({"detail": "You can't leave the group. You are the only admin."}, status=status.HTTP_403_FORBIDDEN)
+
     
 
     Membership.objects.filter(user=request.user, room=room).delete()
     Message.objects.create(sender=request.user, room=room, message=f'{request.user.username} has left the group', message_type='leave')
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])

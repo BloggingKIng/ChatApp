@@ -1,23 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  MDBContainer,
-  MDBRow,
-  MDBCol,
-  MDBCard,
-  MDBCardBody,
-  MDBIcon,
-  MDBTypography,
-  MDBTextArea,
-  MDBCardHeader,
-  MDBBtn,
-  MDBCardFooter,
+import { MDBContainer, MDBRow, MDBCol, MDBCard, MDBCardBody, MDBIcon, MDBTypography, MDBTextArea, MDBCardHeader, MDBBtn, MDBCardFooter, 
+MDBFooter, MDBModal, MDBModalDialog, MDBModalContent, MDBModalHeader, MDBModalTitle, MDBModalBody, MDBModalFooter
+
 } from "mdb-react-ui-kit";
 import Navbar from "./Navbar";
 import api from "../api";
 import './chat.css'
 import { toast, ToastContainer } from 'react-toastify'
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -30,6 +20,8 @@ export default function Chat() {
   const [dropdownMessageId, setDropdownMessageId] = useState(null);
   const [adminUser, setAdminUser] = useState([]);
   const [roomDetails, setRoomDetails] = useState([]);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [show, setShow] = useState(false);
 
   const scroller = useRef(null);
   const navigator = useNavigate();
@@ -229,6 +221,26 @@ export default function Chat() {
     });
   };
 
+  const handleToggleRemoveGroupModal = () => {
+    setShow(true);
+  }
+
+  const handleClose = () => {
+    setShow(false);
+  }
+
+  const handleDelete = () => {
+    api.delete(`http://127.0.0.1:8000/api/delete-group/${window.location.href.split("/").reverse()[0]}/`).then((response) => {
+      setShow(false);
+      navigator("/");
+    })
+    .catch((error) => {
+      console.log(error);
+      toast.error(error.response.data?.detail);
+    });
+
+  }
+
   return (
     <>
       <Navbar />
@@ -244,10 +256,17 @@ export default function Chat() {
                   </span>
                 </h1>
                 <h2 className="font-weight-bold mb-3 text-center text-center h5">Members</h2>
-                <MDBContainer style={{ display: "flex", justifyContent: "center", marginTop: "10px", marginBottom: "10px" }}>
-                  <button className="btn btn-danger" onClick={handleLeave}>
+                <MDBContainer style={{ display: "flex", justifyContent: userIsAdmin(user.username) ? "space-between" : "center", marginTop: "10px", marginBottom: "10px" }}>
+                  {
+                    userIsAdmin(user.username) ? (
+                      <MDBBtn className="btn btn-primary" size="sm"  onClick={handleToggleRemoveGroupModal}>
+                        Remove Group
+                      </MDBBtn>
+                    ):null
+                  }
+                  <MDBBtn className="btn btn-danger" onClick={handleLeave}>
                     Leave Group
-                  </button>
+                  </MDBBtn>
                 </MDBContainer>
                 <MDBTypography listUnStyled className="mb-0">
                   <li className="p-2 border-bottom">
@@ -376,6 +395,27 @@ export default function Chat() {
             </div>
           </MDBCol>
         </MDBRow>
+        <MDBModal open={show} onClose={()=>setShow(false)} tabIndex='-1'>
+          <MDBModalDialog>
+            <MDBModalContent>
+              <MDBModalHeader>
+                <MDBModalTitle>Confirm Delete</MDBModalTitle>
+                <MDBBtn className='btn-close' color='none' onClick={handleClose}></MDBBtn>
+              </MDBModalHeader>
+              <MDBModalBody>
+                Do you really want to delete this group?
+              </MDBModalBody>
+              <MDBModalFooter>
+                <MDBBtn color='secondary' onClick={handleClose}>
+                  Close
+                </MDBBtn>
+                <MDBBtn color='danger' onClick={handleDelete}>
+                  Delete
+                </MDBBtn>
+              </MDBModalFooter>
+            </MDBModalContent>
+          </MDBModalDialog>
+        </MDBModal>
       </MDBContainer>
     </>
   );
