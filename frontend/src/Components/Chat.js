@@ -29,6 +29,7 @@ export default function Chat() {
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const [dropdownMessageId, setDropdownMessageId] = useState(null);
   const [adminUser, setAdminUser] = useState([]);
+  const [roomDetails, setRoomDetails] = useState([]);
 
   const scroller = useRef(null);
   const navigator = useNavigate();
@@ -44,9 +45,21 @@ export default function Chat() {
       })
   }
 
+  const fetchRoomDetails = async () => {
+    await api.get(`/api/room-details/${window.location.href.split("/").reverse()[0]}/`)
+      .then((response) => {
+        setRoomDetails(response.data);
+        console.log(response.data)
+      })
+      .catch((error) => {
+       toast.error(error.response.data?.detail)
+      })
+  }
+
   const fetchMembers = async () => {
     await api.post(`/api/members/${window.location.href.split("/").reverse()[0]}/`)
       .then((response) => {
+        console.log(response.data)
         setMembers(response.data);
         const adminUsers = [];
         for (let member of response.data) {
@@ -60,8 +73,6 @@ export default function Chat() {
       .catch((error) => {
         setEmpty(true);
       })
-
-
   }
 
   const userIsAdmin = (username) => {
@@ -96,23 +107,35 @@ export default function Chat() {
     fetchMessages();
     fetchUserDetails();
     fetchMembers();
+    fetchRoomDetails();
   }, [])
 
   useEffect(() => {
-
     // Initialize WebSocket connection
     const chatSocket = new WebSocket(
       `ws://127.0.0.1:8000/ws/chat/${window.location.href.split("/").reverse()[0]}/`
     );
 
     chatSocket.onmessage = function (e) {
-      const data = JSON.parse(e.data).message;
-      console.log("message")
+      const data = JSON.parse(e.data);
+      console.log("message");
       console.log(data);
-      setMessages((prevMessages) => [...prevMessages, data]);
+
+      if (data.type === "delete") {
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === data.message_id
+              ? { ...msg, message: "This message was deleted!", message_type: "delete" }
+              : msg
+          )
+        );
+      } else {
+        setMessages((prevMessages) => [...prevMessages, data.message]);
+      }
+
       scroller.current.scrollIntoView({
-        behavior: 'smooth',
-      })
+        behavior: "smooth",
+      });
     };
 
     chatSocket.onclose = function (e) {
@@ -120,16 +143,15 @@ export default function Chat() {
     };
 
     chatSocket.onerror = function (e) {
-      console.error(e)
-    }
+      console.error(e);
+    };
 
     // Cleanup WebSocket connection on component unmount
     return () => {
       chatSocket.close();
       chatSocket.onerror = function (e) {
-        console.error(e)
-      }
-
+        console.error(e);
+      };
     };
   });
 
@@ -144,21 +166,18 @@ export default function Chat() {
       sender: user,
       sentdate: new Date().toLocaleString(),
       room: window.location.href.split("/").reverse()[0],
-    }
+    };
     const chatSocket = new WebSocket(
       `ws://127.0.0.1:8000/ws/chat/${window.location.href.split("/").reverse()[0]}/`
     );
 
     chatSocket.onopen = function () {
-      chatSocket.send(
-        JSON.stringify(data)
-      );
+      chatSocket.send(JSON.stringify(data));
     };
 
     setTimeout(() => {
-      fetchMessages()
-    },500)
-
+      fetchMessages();
+    }, 500);
 
     // Clear input after sending message
     setMessageInput("");
@@ -166,44 +185,48 @@ export default function Chat() {
 
   useEffect(() => {
     scroller.current.scrollIntoView({
-      behavior: 'smooth',
-    })
-  }, [messages])
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   if (empty) {
-    navigator("/")
+    navigator("/");
   }
 
   const handleAcceptRequest = (id) => {
-    api.post(`/api/accept_decline_request/`, { id: id, action: 'accept' })
-      .then((response) => {
-        toast.success("Request Accepted!")
-        fetchRequests();
-        fetchMembers();
-      })
+    api.post(`/api/accept_decline_request/`, { id: id, action: "accept" }).then((response) => {
+      toast.success("Request Accepted!");
+      fetchRequests();
+      fetchMembers();
+    });
   };
 
   const handleDeclineRequest = (id) => {
-    api.post(`/api/accept_decline_request/`, { id: id, action: 'decline' })
-      .then((response) => {
-        toast.success("Request Declined!")
-        fetchRequests();
-        fetchMembers();
-      })
-  }
-
+    api.post(`/api/accept_decline_request/`, { id: id, action: "decline" }).then((response) => {
+      toast.success("Request Declined!");
+      fetchRequests();
+      fetchMembers();
+    });
+  };
 
   const handleLeave = async () => {
-    await api.delete(`http://127.0.0.1:8000/api/leave-group/${window.location.href.split("/").reverse()[0]}/`)
-      .then((response) => { navigator("/") })
-      .catch((error) => { console.log(error); toast.error(error.response.data.detail) })
+    await api
+      .delete(`http://127.0.0.1:8000/api/leave-group/${window.location.href.split("/").reverse()[0]}/`)
+      .then((response) => {
+        navigator("/");
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error(error.response.data?.detail);
+      });
+  };
 
-  }
-
-  const handleDeleteMessage = async(id) => {
-    await api.delete(`http://127.0.0.1:8000/api/remove-message/${id}/`)
-    .then((response) => { toast.success("Message Deleted!") })
-    .then(() => { fetchMessages() })
+  const handleDeleteMessage = async (id) => {
+    setHoveredMessageId(null);
+    setDropdownMessageId(null);
+    await api.delete(`http://127.0.0.1:8000/api/remove-message/${id}/`).then((response) => {
+      toast.success("Message Deleted!");
+    });
   };
 
   return (
@@ -215,26 +238,28 @@ export default function Chat() {
           <MDBCol md="3" lg="3" xl="3" className="mb-4 mb-md-0">
             <MDBCard>
               <MDBCardBody>
-                <h2 className="font-weight-bold mb-3 text-center text-center">
-                  Members
-                </h2>
-                <MDBContainer style={{ display: 'flex', justifyContent: 'center', marginTop: '10px', marginBottom: '10px' }}>
-                  <button className="btn btn-danger" onClick={handleLeave}>Leave Group</button>
+                <h1 className="font-weight-bold mb-3 text-center h4">
+                  <span style={{ fontFamily: 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif' }}>
+                    <strong>{roomDetails.name}</strong>
+                  </span>
+                </h1>
+                <h2 className="font-weight-bold mb-3 text-center text-center h5">Members</h2>
+                <MDBContainer style={{ display: "flex", justifyContent: "center", marginTop: "10px", marginBottom: "10px" }}>
+                  <button className="btn btn-danger" onClick={handleLeave}>
+                    Leave Group
+                  </button>
                 </MDBContainer>
                 <MDBTypography listUnStyled className="mb-0">
-                  <li
-                    className="p-2 border-bottom"
-                  >
+                  <li className="p-2 border-bottom">
                     {members.map((member) => (
-                      <a className="d-flex justify-content-center mb-4 text-center" style={{ flexDirection: 'column', background: '#eee' }} key={member.id}>
-
-                        <p className="fw-bold m-3 mb-1 text-center align-self-center">{member.user.username}{member.is_admin ? " (Admin) " : ""}</p>
+                      <a className="d-flex justify-content-center mb-4 text-center" style={{ flexDirection: "column", background: "#eee" }} key={member.id}>
+                        <p className="fw-bold m-3 mb-1 text-center align-self-center">
+                          {member.user.username}
+                          {member.is_admin ? " (Admin) " : ""}
+                        </p>
                         <p className="text-center align-self-center">({member.user.email})</p>
-
                       </a>
-                    ))
-                    }
-
+                    ))}
                   </li>
                 </MDBTypography>
               </MDBCardBody>
@@ -242,20 +267,22 @@ export default function Chat() {
           </MDBCol>
 
           <MDBCol md="9" lg="9" xl="9">
-            <MDBTypography listUnStyled style={{ height: '70vh', overflowY: 'auto' }} className="message-container">
+            <MDBTypography listUnStyled style={{ height: "70vh", overflowY: "auto" }} className="message-container">
               {messages.map((data) => (
                 <li
-                  key={data.id}
-                  className={`d-flex ${data.sender.username === user.username ? "justify-content-end sent" : "justify-content-start"} m-4`}
-                  onMouseEnter={() => setHoveredMessageId(data.id)}
+                  key={data?.id}
+                  className={`d-flex ${data?.sender.username === user.username ? "justify-content-end sent" : "justify-content-start"} m-4`}
+                  onMouseEnter={() => setHoveredMessageId(data?.id)}
                   onMouseLeave={() => setHoveredMessageId(null)}
                 >
-                  <MDBCard style={{ flex: '.8', position: 'relative' }}>
-                    <MDBCardHeader className="d-flex justify-content-between" style={{ padding: '1px' }}>
-                      <p className="fw-bold mb-0" style={{ padding: '10px' }}>{data.sender.username === user.username ? `You (${data.sender.username})` : `${data.sender.full_name} (${data.sender.username})`}</p>
-                      <p className="text-muted small mb-0" style={{ padding: '10px' }}>
-                        <MDBIcon far icon="clock" /> {data.sent ? data.sentdate : new Date(data.sentdate).toLocaleString()}
-                      {hoveredMessageId === data.id && (data.sender.username === user.username || userIsAdmin(user.username)) && (data.message_type !== 'delete') && (
+                  <MDBCard style={{ flex: ".8", position: "relative" }}>
+                    <MDBCardHeader className="d-flex justify-content-between" style={{ padding: "1px" }}>
+                      <p className="fw-bold mb-0" style={{ padding: "10px" }}>
+                        {data?.sender.username === user.username ? `You (${data?.sender.username})` : `${data?.sender.full_name} (${data?.sender.username})`}
+                      </p>
+                      <p className="text-muted small mb-0" style={data?.message_type === 'delete' ? { display:'none' } : { padding: '10px'}}>
+                        <MDBIcon far icon="clock" /> {data?.sent ? data?.sentdate : new Date(data?.sentdate).toLocaleString()}
+                      {hoveredMessageId === data?.id && (data?.sender.username === user.username || userIsAdmin(user.username)) && (data?.message_type !== 'delete') && (
                       <div
                         style={{
                          display:'inline-block',
@@ -264,7 +291,7 @@ export default function Chat() {
                          marginLeft:'10px',
                          cursor:'pointer'
                         }}
-                        onMouseEnter={() => setDropdownMessageId(id=>id===data.id?null:data.id)}
+                        onMouseEnter={() => setDropdownMessageId(id=>id===data?.id?null:data?.id)}
                         onMouseLeave={() => setDropdownMessageId(null)}
                       >
                         <MDBIcon fas icon="ellipsis-v" />
@@ -273,14 +300,14 @@ export default function Chat() {
                       </p>
                     </MDBCardHeader>
                     <MDBCardBody style={{ padding: '10px' }}>
-                      <p className="mb-0">
-                        {data.message}
+                      <p className="mb-0" style={data?.message_type === 'delete' ? { color: 'red', fontStyle:'italic' } : null}>
+                        {data?.message}
                       </p>
                     </MDBCardBody>
                     
-                    {dropdownMessageId === data.id && (
+                    {dropdownMessageId === data?.id && (
                       <div
-                        onMouseEnter={() => setDropdownMessageId(data.id)}
+                        onMouseEnter={() => setDropdownMessageId(data?.id)}
                         onMouseLeave={() => setDropdownMessageId(null)}
                         style={{
                           position: 'absolute',
@@ -297,7 +324,7 @@ export default function Chat() {
                       >
                         <p
                           style={{ margin: '10px', cursor: 'pointer',textAlign:'center' }}
-                          onClick={() => handleDeleteMessage(data.id)}
+                          onClick={() => handleDeleteMessage(data?.id)}
                           className="dp-btn"
                         >
                           Delete
@@ -309,10 +336,12 @@ export default function Chat() {
               ))}
               {requests.map((request) => (
                 <li key={request.id} className="d-flex justify-content-between m-4">
-                  <MDBCard style={{ flex: '.8' }}>
-                    <MDBCardHeader className="d-flex justify-content-between" style={{ padding: '1px' }}>
-                      <p className="fw-bold mb-0" style={{ padding: '10px' }}>{request.requester.full_name} ({request.requester.username})</p>
-                      <p className="text-muted small mb-0" style={{ padding: '10px' }}>
+                  <MDBCard style={{ flex: ".8" }}>
+                    <MDBCardHeader className="d-flex justify-content-between" style={{ padding: "1px" }}>
+                      <p className="fw-bold mb-0" style={{ padding: "10px" }}>
+                        {request.requester.full_name} ({request.requester.username})
+                      </p>
+                      <p className="text-muted small mb-0" style={{ padding: "10px" }}>
                         <MDBIcon far icon="clock" /> {new Date(request.sentdate).toLocaleString()}
                       </p>
                     </MDBCardHeader>
@@ -320,15 +349,14 @@ export default function Chat() {
                       <p className="mb-0">{request.request_message}!</p>
                     </MDBCardBody>
                     <MDBCardFooter>
-                      <MDBBtn color="success" style={{ borderRadius: '0px', marginRight: '8px' }} onClick={() => handleAcceptRequest(request.id)}>
+                      <MDBBtn color="success" style={{ borderRadius: "0px", marginRight: "8px" }} onClick={() => handleAcceptRequest(request.id)}>
                         Accept
                       </MDBBtn>
-                      <MDBBtn color="danger" style={{ borderRadius: '0px' }} onClick={() => handleDeclineRequest(request.id)}>
+                      <MDBBtn color="danger" style={{ borderRadius: "0px" }} onClick={() => handleDeclineRequest(request.id)}>
                         Decline
                       </MDBBtn>
                     </MDBCardFooter>
                   </MDBCard>
-
                 </li>
               ))}
               <div ref={scroller}></div>

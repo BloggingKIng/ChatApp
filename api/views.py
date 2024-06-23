@@ -194,6 +194,9 @@ def leave_group(request, room_id):
     Message.objects.create(sender=request.user, room=room, message=f'{request.user.username} has left the group', message_type='leave')
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def remove_message(request, message_id):
@@ -205,14 +208,34 @@ def remove_message(request, message_id):
     if message.sender != request.user and not Membership.objects.filter(user=request.user, room=message.room, is_admin=True).exists():
         return Response({"detail": "You can't delete this message."}, status=status.HTTP_403_FORBIDDEN)
     
-
     if message.sender == request.user:
         message.message = 'This message was deleted by the sender!'
         message.message_type = 'delete'
         message.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    if Membership.objects.filter(user=request.user, room=message.room, is_admin=True).exists():
+    elif Membership.objects.filter(user=request.user, room=message.room, is_admin=True).exists():
         message.message = 'This message was deleted by the admin!'
         message.message_type = 'delete'
         message.save()
+    else:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"chat_{message.room.id}",
+        {
+            "type": "message.delete",
+            "message_id": message_id,
+        }
+    )
+
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_group_details(request,id):
+    group = Room.objects.filter(id=id)
+    if len(group) != 0:
+        serializer = RoomSerializer(group.first())
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response({'detail': 'Group not found'},status=status.HTTP_404_NOT_FOUND)
