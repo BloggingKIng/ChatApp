@@ -16,4 +16,5 @@ urlpatterns = [
     path('leave-group/<int:room_id>/',views.leave_group,name='leave_group'),
     path('remove-message/<int:message_id>/',views.remove_message,name='remove_message'),
     path('room-details/<int:id>/', views.get_group_details, name='room_details'),
+    path('remove-member/', views.remove_member, name='remove_member'),
 ]

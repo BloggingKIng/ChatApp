@@ -7,6 +7,7 @@ from .serializers import RoomSerializer, MembershipSerializer, UserSerializer, M
 from django.core.exceptions import ObjectDoesNotExist
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from users.models import CustomUser
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -243,3 +244,35 @@ def get_group_details(request,id):
         return Response(serializer.data, status=status.HTTP_200_OK)
     else:
         return Response({'detail': 'Group not found'},status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def remove_member(request):
+    user_id = request.data['username']
+    room_id = request.data['room_id']
+    requesting_user = request.user
+    user_is_admin = Membership.objects.filter(user=requesting_user, room=room_id, is_admin=True).exists()
+    if user_is_admin == True:
+        try:
+            room = Room.objects.get(id=room_id)
+            user = CustomUser.objects.get(username=user_id)
+        except:
+            return Response({'message':'User or Room does not exist'},status=status.HTTP_404_NOT_FOUND)
+        
+        membership = Membership.objects.get(user=user, room=room)
+        membership.delete()
+        message = Message.objects.create(sender=requesting_user, room=room, message=f'{requesting_user.username} has removed {user.username} from the group',message_type='member-remove')
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{room.id}",
+            {
+                "type": "message.member-remove",
+                "message_id": message.id,
+                "message": MessageSerializer(message).data
+            }
+        )
+
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    else:
+        return Response({'detail':'You are not an admin of this group'},status=status.HTTP_401_UNAUTHORIZED)

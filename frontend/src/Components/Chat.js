@@ -241,6 +241,13 @@ export default function Chat() {
 
   }
 
+  const removeMember = async (username) => {
+    await api.post(`http://127.0.0.1:8000/api/remove-member/`, {username:username,room_id:window.location.href.split("/").reverse()[0] }).then((response) => {
+      toast.success("Member Removed!");
+    })
+  }
+
+
   return (
     <>
       <Navbar />
@@ -277,6 +284,11 @@ export default function Chat() {
                           {member.is_admin ? " (Admin) " : ""}
                         </p>
                         <p className="text-center align-self-center">({member.user.email})</p>
+                        {userIsAdmin(user.username) ? (
+                            <a className="text-danger" onClick={() => removeMember(member.user.username)} style={{ cursor: "pointer", textDecoration:'underline' }}>
+                              Remove
+                            </a>
+                          ):null}
                       </a>
                     ))}
                   </li>
