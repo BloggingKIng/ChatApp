@@ -63,3 +63,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "deleted_guy": event['deleted_guy']
             
         }))
+
+    async def message_join(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'join',
+            'message': event['message'],
+            'message_id': event['message_id'],
+        }))
+
+    async def message_leave(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'leave',
+            'message': event['message'],
+            'message_id': event['message_id'],
+        }))

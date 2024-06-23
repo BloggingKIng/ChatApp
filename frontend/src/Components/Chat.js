@@ -134,12 +134,25 @@ export default function Chat() {
           setTimeout(() => {
             navigator("/");
           }, 30000);
+          fetchMembers();
         }
         else{
           setMessages((prevMessages) => [...prevMessages, data.message]);
           fetchMembers();
         }
       }
+      else if (data.type === 'join'){
+        setMessages((prevMessages) => [...prevMessages, {message:   `${data.message.sender.username} has joined the group`, message_type: "join", sender: user, sentdate: data.message.sentdate}]);
+        fetchMembers();
+      }
+
+      else if (data.type === 'leave'){
+        console.log('leave')
+        console.log(data)
+        setMessages((prevMessages) => [...prevMessages, {message:   `${data.message.sender.username} has left the group`, message_type: "leave", sender: data.message.sender, sentdate: data.message.sentdate}]);
+        fetchMembers();
+      }
+
       else {
         setMessages((prevMessages) => [...prevMessages, data.message]);
       }

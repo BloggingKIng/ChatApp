@@ -87,7 +87,16 @@ def accept_or_decline_request(request):
         return Response({'message':'Request with this id does not exist'},status=status.HTTP_404_NOT_FOUND)
     if action == 'accept':
         Membership.objects.get_or_create(user=req.requester, room=req.room, is_admin=False)
-        Message.objects.create(sender=req.requester, room=req.room, message=f'{req.requester.username} has joined the group', message_type='join')
+        message = Message.objects.create(sender=req.requester, room=req.room, message=f'{req.requester.username} has joined the group', message_type='join')
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{message.room.id}",
+            {
+                "type": "message.join",
+                "message_id": message.id,
+                "message": MessageSerializer(message).data
+            }
+        )
         req.accepted = True
     else:
         req.declined = True
@@ -197,7 +206,18 @@ def leave_group(request, room_id):
     
 
     Membership.objects.filter(user=request.user, room=room).delete()
-    Message.objects.create(sender=request.user, room=room, message=f'{request.user.username} has left the group', message_type='leave')
+    message = Message.objects.create(sender=request.user, room=room, message=f'{request.user.username} has left the group', message_type='leave')
+    print('date')
+    print(message.sentdate)
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"chat_{room.id}",
+        {
+            "type": "message.leave",
+            "message": MessageSerializer(message).data,
+            "message_id": message.id
+        }
+    )
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
