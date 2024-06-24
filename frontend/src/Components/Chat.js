@@ -153,6 +153,11 @@ export default function Chat() {
     setMessages((prevMessages) => [...prevMessages, {message:   `${data.message.sender.username} has left the group`, message_type: "leave", sender: data.message.sender, sentdate: data.message.sentdate}]);
     fetchMembers();
   }
+
+  else if (data.type === 'admin'){
+    setMessages((prevMessages) => [...prevMessages, {...data.message, message_type: "admin", sender: data.message.sender, sentdate: data.message.sentdate}]);
+    fetchMembers();
+  }
   
   else {
     setMessages((prevMessages) => [...prevMessages, {...data.message, message_type:'text'}]);
@@ -302,6 +307,15 @@ const handleSendMessage = () => {
     return usernameToColorMap[username];
   };
 
+  const handleMakeAdmin = async (username) => {
+    await api.post(`http://127.0.0.1:8000/api/make-admin/`, {target_id:username, room_id:window.location.href.split("/").reverse()[0]}).then((response) => {
+      toast.success("Successfully added ",username," as admin");
+      fetchMembers();
+    }).catch((error) => {
+      toast.error(error.response.data?.detail);
+    })
+  }
+
   if (loading) {
     return <h1>Loading...</h1>;
   }
@@ -345,9 +359,15 @@ const handleSendMessage = () => {
                         <span>
                           <p className="text-center align-self-center m-0">({member.user.email})</p>
                           {userIsAdmin(user.username) && user.username !== member.user.username ? (
+                            <span>
                               <a className="text-danger" onClick={() => removeMember(member.user.username)} style={{ cursor: "pointer", textDecoration:'underline' }}>
                                 Remove
                               </a>
+
+                              {!userIsAdmin(member.user.username) &&<a className="text-success" onClick={() => handleMakeAdmin(member.user.username)} style={{ cursor: "pointer", textDecoration:'underline', marginLeft:'10px' }}>
+                                Make Admin
+                              </a>}
+                            </span>
                             ):null}
                         </span>
                       </a>
@@ -392,7 +412,9 @@ const handleSendMessage = () => {
                       </p>
                     </MDBCardHeader>
                     <MDBCardBody style={{ padding: '10px' }}>
-                      <p className="mb-0" style={(data?.message_type === 'delete' ||  (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : data?.message_type === 'leave' ? { color:'#e0ab19', fontWeight:'bold',fontStyle:'italic' } : null}>
+                      <p className="mb-0" style={(data?.message_type === 'delete' ||  (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : data?.message_type === 'leave' ? { color:'#e0ab19', fontWeight:'bold',fontStyle:'italic' }
+                      : data.message_type === 'admin'? { color: '#41fc41', fontWeight: 'bold' }
+                      : null}>
                         {data?.message}
                       </p>
                     </MDBCardBody>

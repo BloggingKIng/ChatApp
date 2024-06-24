@@ -77,3 +77,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message': event['message'],
             'message_id': event['message_id'],
         }))
+
+    async def message_admin(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'admin',
+            'message': event['message'],
+            'message_id': event['message_id'],
+        }))

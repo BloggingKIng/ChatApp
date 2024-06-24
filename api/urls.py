@@ -17,4 +17,5 @@ urlpatterns = [
     path('remove-message/<int:message_id>/',views.remove_message,name='remove_message'),
     path('room-details/<int:id>/', views.get_group_details, name='room_details'),
     path('remove-member/', views.remove_member, name='remove_member'),
+    path('make-admin/', views.make_admin, name='make_admin'),
 ]

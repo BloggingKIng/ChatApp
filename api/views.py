@@ -298,3 +298,39 @@ def remove_member(request):
 
     else:
         return Response({'detail':'You are not an admin of this group'},status=status.HTTP_401_UNAUTHORIZED)
+    
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def make_admin(request):
+    room_id = request.data['room_id']
+    requesting_user = request.user
+    target_user = request.data['target_id']
+    try:
+        room = Room.objects.get(id=room_id)
+    except:
+        return Response({'detail':'A Room with this id doesn\'t exist'})
+    requesting_user_isAdmin = Membership.objects.filter(user=requesting_user, room=room, is_admin=True).exists()
+    if not requesting_user_isAdmin:
+        return Response({'detail':'You are not an admin of this group'},status=status.HTTP_401_UNAUTHORIZED)
+    else:
+        try:
+            target_user = CustomUser.objects.get(username=target_user)
+        except:
+            return Response({'detail':'User with this username does not exist'},status=status.HTTP_404_NOT_FOUND)
+        target_user_membership = Membership.objects.get(user=target_user, room=room)
+        target_user_membership.is_admin = True
+        target_user_membership.save()
+        message = Message.objects.create(sender=requesting_user, room=room, message=f'{requesting_user.username} has made {target_user.username} an admin',message_type='admin')
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{room.id}",
+            {
+                "type": "message.admin",
+                "message_id": message.id,
+                "message": MessageSerializer(message).data,
+                "new_admin": target_user.username
+            }
+        )
+        return Response(status=status.HTTP_200_OK)
