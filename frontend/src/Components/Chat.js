@@ -68,10 +68,11 @@ export default function Chat() {
       })
   }
 
+  
   const userIsAdmin = (username) => {
     return adminUser.includes(username);
   }
-
+  
   const fetchRequests = async () => {
     try {
       const response = await api.post(`/api/requests/`, { id: window.location.href.split("/").reverse()[0] });
@@ -84,31 +85,31 @@ export default function Chat() {
 
   useEffect(() => {
     const intervalId = setInterval(fetchRequests, 5000);
-
+    
     return () => clearInterval(intervalId);
   }, []);
-
+  
   const fetchUserDetails = async () => {
     await api.get(`/api/user_details/`)
-      .then((response) => {
-        setUser(response.data);
-        console.log(response.data);
-      })
+    .then((response) => {
+      setUser(response.data);
+      console.log(response.data);
+    })
   }
-
+  
   useEffect(() => {
     fetchMessages();
     fetchUserDetails();
     fetchMembers();
     fetchRoomDetails();
   }, [])
-
+  
   useEffect(() => {
     // Initialize WebSocket connection
     const chatSocket = new WebSocket(
       `ws://127.0.0.1:8000/ws/chat/${window.location.href.split("/").reverse()[0]}/`
     );
-
+    
     chatSocket.onmessage = function (e) {
       const data = JSON.parse(e.data);
       console.log("message");
@@ -118,73 +119,73 @@ export default function Chat() {
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             msg.id === data.message_id
-              ? { ...msg, message: "This message was deleted!", message_type: "delete" }
-              : msg
-          )
-        );
-      } 
-      else if (data.type === "member_remove"){
-        console.log("member_remove")
-        console.log(data)
-        console.log(user)
-        if (data.deleted_guy === user.username) {
-          console.log("You have been removed from the group")
-          toast.error("You have been removed from the group");
-          setMessages((prevMessages) => [...prevMessages, {message:   `You have been removed from the group by ${data.message.sender.username} . You will be redirected to the home page in 30 seconds`, message_type: "delete", sender: user}]);
-          setTimeout(() => {
-            navigator("/");
-          }, 30000);
-          fetchMembers();
-        }
-        else{
-          setMessages((prevMessages) => [...prevMessages, data.message]);
-          fetchMembers();
-        }
-      }
-      else if (data.type === 'join'){
-        setMessages((prevMessages) => [...prevMessages, {message:   `${data.message.sender.username} has joined the group`, message_type: "join", sender: user, sentdate: data.message.sentdate}]);
-        fetchMembers();
-      }
-
-      else if (data.type === 'leave'){
-        console.log('leave')
-        console.log(data)
-        setMessages((prevMessages) => [...prevMessages, {message:   `${data.message.sender.username} has left the group`, message_type: "leave", sender: data.message.sender, sentdate: data.message.sentdate}]);
-        fetchMembers();
-      }
-
-      else {
-        setMessages((prevMessages) => [...prevMessages, data.message]);
-      }
-
-      scroller.current.scrollIntoView({
-        behavior: "smooth",
-      });
-    };
-
-    chatSocket.onclose = function (e) {
-      console.error("Chat socket closed unexpectedly");
-    };
-
-    chatSocket.onerror = function (e) {
-      console.error(e);
-    };
-
-    // Cleanup WebSocket connection on component unmount
-    return () => {
-      chatSocket.close();
-      chatSocket.onerror = function (e) {
-        console.error(e);
-      };
-    };
-  });
-
-  const handleSendMessage = () => {
-    // Send message to WebSocket server
-    if (!messageInput) {
-      return;
+        ? { ...msg, message: "This message was deleted!", message_type: "delete" }
+        : msg
+      )
+    );
+  } 
+  else if (data.type === "member_remove"){
+    console.log("member_remove")
+    console.log(data)
+    console.log(user)
+    if (data.deleted_guy === user.username) {
+      console.log("You have been removed from the group")
+      toast.error("You have been removed from the group");
+      setMessages((prevMessages) => [...prevMessages, {message:   `You have been removed from the group by ${data.message.sender.username} . You will be redirected to the home page in 30 seconds`, message_type: "delete", sender: user}]);
+      setTimeout(() => {
+        navigator("/");
+      }, 30000);
+      fetchMembers();
     }
-    const data = {
+    else{
+      setMessages((prevMessages) => [...prevMessages, data.message]);
+      fetchMembers();
+    }
+  }
+  else if (data.type === 'join'){
+    setMessages((prevMessages) => [...prevMessages, {message:   `${data.message.sender.username} has joined the group`, message_type: "join", sender: user, sentdate: data.message.sentdate}]);
+    fetchMembers();
+  }
+  
+  else if (data.type === 'leave'){
+    console.log('leave')
+    console.log(data)
+    setMessages((prevMessages) => [...prevMessages, {message:   `${data.message.sender.username} has left the group`, message_type: "leave", sender: data.message.sender, sentdate: data.message.sentdate}]);
+    fetchMembers();
+  }
+  
+  else {
+    setMessages((prevMessages) => [...prevMessages, {...data.message, message_type:'text'}]);
+  }
+  
+  scroller.current.scrollIntoView({
+    behavior: "smooth",
+  });
+};
+
+chatSocket.onclose = function (e) {
+  console.error("Chat socket closed unexpectedly");
+};
+
+chatSocket.onerror = function (e) {
+  console.error(e);
+};
+
+// Cleanup WebSocket connection on component unmount
+return () => {
+  chatSocket.close();
+  chatSocket.onerror = function (e) {
+    console.error(e);
+  };
+};
+});
+
+const handleSendMessage = () => {
+  // Send message to WebSocket server
+  if (!messageInput) {
+    return;
+  }
+  const data = {
       message: messageInput,
       sent: true,
       sender: user,
@@ -194,25 +195,25 @@ export default function Chat() {
     const chatSocket = new WebSocket(
       `ws://127.0.0.1:8000/ws/chat/${window.location.href.split("/").reverse()[0]}/`
     );
-
+    
     chatSocket.onopen = function () {
       chatSocket.send(JSON.stringify(data));
     };
-
+    
     setTimeout(() => {
       fetchMessages();
     }, 500);
-
+    
     // Clear input after sending message
     setMessageInput("");
   };
-
+  
   useEffect(() => {
     scroller.current.scrollIntoView({
       behavior: "smooth",
     });
   }, [messages]);
-
+  
   if (empty) {
     navigator("/");
   }
@@ -224,7 +225,7 @@ export default function Chat() {
       fetchMembers();
     });
   };
-
+  
   const handleDeclineRequest = (id) => {
     api.post(`/api/accept_decline_request/`, { id: id, action: "decline" }).then((response) => {
       toast.success("Request Declined!");
@@ -232,10 +233,10 @@ export default function Chat() {
       fetchMembers();
     });
   };
-
+  
   const handleLeave = async () => {
     await api
-      .delete(`http://127.0.0.1:8000/api/leave-group/${window.location.href.split("/").reverse()[0]}/`)
+    .delete(`http://127.0.0.1:8000/api/leave-group/${window.location.href.split("/").reverse()[0]}/`)
       .then((response) => {
         navigator("/");
       })
@@ -243,26 +244,26 @@ export default function Chat() {
         console.log(error);
         toast.error(error.response.data?.detail);
       });
-  };
+    };
+    
+    const handleDeleteMessage = async (id) => {
+      setHoveredMessageId(null);
+      setDropdownMessageId(null);
+      await api.delete(`http://127.0.0.1:8000/api/remove-message/${id}/`).then((response) => {
+        toast.success("Message Deleted!");
+      });
+    };
+    
+    const handleToggleRemoveGroupModal = () => {
+      setShow(true);
+    }
 
-  const handleDeleteMessage = async (id) => {
-    setHoveredMessageId(null);
-    setDropdownMessageId(null);
-    await api.delete(`http://127.0.0.1:8000/api/remove-message/${id}/`).then((response) => {
-      toast.success("Message Deleted!");
-    });
-  };
-
-  const handleToggleRemoveGroupModal = () => {
-    setShow(true);
-  }
-
-  const handleClose = () => {
-    setShow(false);
-  }
-
-  const handleDelete = () => {
-    api.delete(`http://127.0.0.1:8000/api/delete-group/${window.location.href.split("/").reverse()[0]}/`).then((response) => {
+    const handleClose = () => {
+      setShow(false);
+    }
+    
+    const handleDelete = () => {
+      api.delete(`http://127.0.0.1:8000/api/delete-group/${window.location.href.split("/").reverse()[0]}/`).then((response) => {
       setShow(false);
       navigator("/");
     })
@@ -270,9 +271,9 @@ export default function Chat() {
       console.log(error);
       toast.error(error.response.data?.detail);
     });
-
+    
   }
-
+  
   const removeMember = async (username) => {
     const newMembers = members.filter((member) => member.username !== username);
     setMembers(newMembers);
@@ -284,12 +285,28 @@ export default function Chat() {
     fetchMembers();
     setLoading(false);
   }
+  const colors = [
+    "#c98888","#2b2ba7", "#ffae67", "#a0ff3a", "#0f3b54", "#6eadd1", "#5b0d6a", "#2b2b2b","#25979b"
+  ];
+  
+  const usernameToColorMap = {};
+  
+  const getColorForUsername = (username) => {
+    if (!usernameToColorMap[username]) {
+      if (Object.keys(usernameToColorMap).length < colors.length) {
+        usernameToColorMap[username] = colors[Object.keys(usernameToColorMap).length];
+      } else {
+        usernameToColorMap[username] = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+      }
+    }
+    return usernameToColorMap[username];
+  };
 
   if (loading) {
     return <h1>Loading...</h1>;
   }
 
-
+  
   return (
     <>
       <Navbar />
@@ -352,10 +369,10 @@ export default function Chat() {
                 >
                   <MDBCard style={{ flex: ".8", position: "relative" }}>
                     <MDBCardHeader className="d-flex justify-content-between" style={{ padding: "1px" }}>
-                      <p className="fw-bold mb-0" style={{ padding: "10px" }}>
-                        {data?.sender.username === user.username ? `You (${data?.sender.username})` : `${data?.sender.full_name} (${data?.sender.username})`}
+                      <p className="fw-bold mb-0" style={{ padding: "10px", color:getColorForUsername(data?.sender.username) }}>
+                        {data?.sender.username === user.username ? `You (${data?.sender.username})` : `@${data?.sender.username}`}
                       </p>
-                      <p className="text-muted small mb-0" style={data?.message_type === 'delete' ? { display:'none' } : { padding: '10px'}}>
+                      <p className="text-muted small mb-0" style={data?.message_type !== 'text' ? { display:'none' } : { padding: '10px'}}>
                         <MDBIcon far icon="clock" /> {data?.sent ? data?.sentdate : new Date(data?.sentdate).toLocaleString()}
                       {hoveredMessageId === data?.id && (data?.sender.username === user.username || userIsAdmin(user.username)) && (data?.message_type == 'text') && (
                       <div
@@ -375,7 +392,7 @@ export default function Chat() {
                       </p>
                     </MDBCardHeader>
                     <MDBCardBody style={{ padding: '10px' }}>
-                      <p className="mb-0" style={(data?.message_type === 'delete' ||  (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : null}>
+                      <p className="mb-0" style={(data?.message_type === 'delete' ||  (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : data?.message_type === 'leave' ? { color:'#e0ab19', fontWeight:'bold',fontStyle:'italic' } : null}>
                         {data?.message}
                       </p>
                     </MDBCardBody>
