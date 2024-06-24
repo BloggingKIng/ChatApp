@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MDBContainer, MDBRow, MDBCol, MDBCard, MDBCardBody, MDBIcon, MDBTypography, MDBTextArea, MDBCardHeader, MDBBtn, MDBCardFooter, 
-MDBFooter, MDBModal, MDBModalDialog, MDBModalContent, MDBModalHeader, MDBModalTitle, MDBModalBody, MDBModalFooter
+MDBFooter, MDBModal, MDBModalDialog, MDBModalContent, MDBModalHeader, MDBModalTitle, MDBModalBody, MDBModalFooter, MDBCarousel, 
+MDBCarouselItem
 
 } from "mdb-react-ui-kit";
 import Navbar from "./Navbar";
@@ -24,6 +25,9 @@ export default function Chat() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState([]);
+  const [carouselOpen, setCarouselOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImages, setCurrentImages] = useState([]);
 
   const scroller = useRef(null);
   const navigator = useNavigate();
@@ -355,6 +359,17 @@ const handleSendMessage = () => {
     setImageFiles(updatedImages);
   };
 
+  const handleImageClick = (index, images) => {
+    setCurrentImageIndex(index);
+    setCurrentImages(images);
+    setCarouselOpen(true);
+    console.log(index)
+    console.log(images);
+  };
+
+  const closeModal = () => {
+    setCarouselOpen(false);
+  };
   
 
   if (loading) {
@@ -453,11 +468,23 @@ const handleSendMessage = () => {
                       </p>
                     </MDBCardHeader>
                     <MDBCardBody style={{ padding: '10px' }}>
-                      <p className="mb-0" style={(data?.message_type === 'delete' ||  (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle:'italic' } : data?.message_type === 'join' ? { color:'green', fontWeight:'bold' } : data?.message_type === 'leave' ? { color:'#e0ab19', fontWeight:'bold',fontStyle:'italic' }
-                      : data.message_type === 'admin'? { color: '#41fc41', fontWeight: 'bold' }
-                      : null}>
+                      <p className="mb-0" style={(data?.message_type === 'delete' || (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle: 'italic' } : data?.message_type === 'join' ? { color: 'green', fontWeight: 'bold' } : data?.message_type === 'leave' ? { color: '#e0ab19', fontWeight: 'bold', fontStyle: 'italic' } : data.message_type === 'admin' ? { color: '#41fc41', fontWeight: 'bold' } : null}>
                         {data?.message}
                       </p>
+                      {data.images?.length > 0 && (
+                        <div className="d-flex flex-wrap mt-3">
+                          {data.images.map((image, index) => (
+                            <div key={index} className="position-relative m-1" onClick={() => handleImageClick(index, data.images)}>
+                              <img
+                                src={"http://127.0.0.1:8000" + image.image}
+                                alt={`Image ${index + 1}`}
+                                className="uploaded-image-preview"
+                                style={{ height: '200px', width: "200px", cursor: "pointer" }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </MDBCardBody>
                     
                     {dropdownMessageId === data?.id && (
@@ -583,6 +610,22 @@ const handleSendMessage = () => {
               </MDBModalFooter>
             </MDBModalContent>
           </MDBModalDialog>
+        </MDBModal>
+        <MDBModal open={carouselOpen} onClose={()=>closeModal()} contentLabel="Image Carousel">
+          <MDBModalBody>
+            <MDBCarousel showControls={true} showIndicators={true} className="z-depth-1" dark pause={false}>
+                {currentImages.map((image, index) => (
+                  <MDBCarouselItem itemId={index + 1} key={index}>
+                    <img
+                      src={"http://127.0.0.1:8000" + image.image}
+                      style={{ maxWidth: '100%', maxHeight: '70vh' }}
+                      alt={`Image ${index + 1}`}
+                      className="d-block w-100"
+                    />
+                  </MDBCarouselItem>
+                ))}
+            </MDBCarousel>
+          </MDBModalBody>
         </MDBModal>
       </MDBContainer>
     </>
