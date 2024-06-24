@@ -4,6 +4,7 @@ MDBFooter, MDBModal, MDBModalDialog, MDBModalContent, MDBModalHeader, MDBModalTi
 MDBCarouselItem
 
 } from "mdb-react-ui-kit";
+import {Carousel} from 'react-bootstrap';
 import Navbar from "./Navbar";
 import api from "../api";
 import './chat.css'
@@ -126,10 +127,11 @@ export default function Chat() {
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             msg.id === data.message_id
-        ? { ...msg, message: "This message was deleted!", message_type: "delete" }
+        ? { ...msg, message: "This message was deleted!", message_type: "delete",images:[] }
         : msg
       )
     );
+    setCarouselOpen(false);  
   } 
   else if (data.type === "member_remove"){
     console.log("member_remove")
@@ -370,6 +372,14 @@ const handleSendMessage = () => {
   const closeModal = () => {
     setCarouselOpen(false);
   };
+
+  const goToNextImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % currentImages.length);
+  };
+
+  const goToPreviousImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + currentImages.length) % currentImages.length);
+  };
   
 
   if (loading) {
@@ -382,7 +392,7 @@ const handleSendMessage = () => {
       <Navbar />
       <ToastContainer />
       <MDBContainer fluid className="py-5" style={{ backgroundColor: "#eee" }}>
-        <MDBRow>
+        <MDBRow className={carouselOpen?'blur-background':''}>
           <MDBCol md="3" lg="3" xl="3" className="mb-4 mb-md-0">
             <MDBCard>
               <MDBCardBody>
@@ -611,22 +621,39 @@ const handleSendMessage = () => {
             </MDBModalContent>
           </MDBModalDialog>
         </MDBModal>
-        <MDBModal open={carouselOpen} onClose={()=>closeModal()} contentLabel="Image Carousel">
+        <MDBModal open={carouselOpen} onClose={closeModal} size="lg">
           <MDBModalBody>
-            <MDBCarousel showControls={true} showIndicators={true} className="z-depth-1" dark pause={false}>
-                {currentImages.map((image, index) => (
-                  <MDBCarouselItem itemId={index + 1} key={index}>
-                    <img
-                      src={"http://127.0.0.1:8000" + image.image}
-                      style={{ maxWidth: '100%', maxHeight: '70vh' }}
-                      alt={`Image ${index + 1}`}
-                      className="d-block w-100"
-                    />
-                  </MDBCarouselItem>
-                ))}
-            </MDBCarousel>
+            <div style={{display:'flex', justifyContent:'flex-end',margin:'0 auto', width:'80%'}}>
+              <span className='' color='white' onClick={closeModal} style={{cursor:'pointer'}}>
+                <MDBIcon icon='times' size='2x' color="white"/>
+              </span>
+            </div>
+            <div className="d-flex justify-content-center align-items-center" style={{width:'80%', margin:'0 auto', justifyContent:'space-around'}}>
+              {currentImages.length>1 && <MDBBtn color="primary" onClick={goToPreviousImage} style={{ zIndex: 1 }}>
+                <MDBIcon icon="angle-left" size="2x" />
+              </MDBBtn>}
+              <Carousel defaultActiveIndex={currentImageIndex} activeIndex={currentImageIndex} controls={false} indicators={false} slide={false}>
+                  {currentImages.map((image, index) => (
+                    <Carousel.Item itemId={index + 1} key={index}>
+                     
+                      <div style={{width:'auto',height:'70vh', display:'flex',alignContent:'center',alignItems:'center', margin:'20px auto', justifyContent:'center'}}>
+                        <img
+                          src={"http://127.0.0.1:8000" + image.image}
+                          alt={`Image ${index + 1}`}
+                          className="img-fluid img-responsive"
+                          style={{width:'auto', maxWidth:'80%', margin:'auto', height:'auto', maxHeight:'70vh'}}
+                        />
+                      </div>
+                    </Carousel.Item>
+                  ))}
+              </Carousel>
+              {currentImages.length>1&&<MDBBtn color="primary" onClick={goToNextImage} style={{ zIndex: 1 }}>
+                <MDBIcon icon="angle-right" size="2x" />
+              </MDBBtn>}
+            </div>
           </MDBModalBody>
         </MDBModal>
+
       </MDBContainer>
     </>
   );
