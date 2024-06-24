@@ -161,3 +161,6 @@ CORS_ALLOW_ALL_ORIGINS=True
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'frontend/build/static'),
 )
+
+MEDIA_ROOT = BASE_DIR/'media'
+MEDIA_URL = '/media/'

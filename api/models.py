@@ -40,3 +40,8 @@ class Requests(models.Model):
     request_type = models.CharField(max_length=30)
     sentdate = models.DateTimeField(auto_now_add=True)
     accepted = models.BooleanField(default=False)
+
+# Separate model for images to allow for multiple images per message
+class MessageImages(models.Model):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='images/')

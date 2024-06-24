@@ -23,6 +23,7 @@ export default function Chat() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [imageFiles, setImageFiles] = useState([]);
 
   const scroller = useRef(null);
   const navigator = useNavigate();
@@ -32,6 +33,8 @@ export default function Chat() {
       .post(`/api/messages/`, { id: window.location.href.split("/").reverse()[0] })
       .then((response) => {
         setMessages(response.data);
+        console.log("msg")
+        console.log(response.data);
       })
       .catch((error) => {
         setEmpty(true);
@@ -196,21 +199,45 @@ const handleSendMessage = () => {
       sender: user,
       sentdate: new Date().toLocaleString(),
       room: window.location.href.split("/").reverse()[0],
+      images: []
     };
     const chatSocket = new WebSocket(
       `ws://127.0.0.1:8000/ws/chat/${window.location.href.split("/").reverse()[0]}/`
     );
+
     
-    chatSocket.onopen = function () {
-      chatSocket.send(JSON.stringify(data));
+    
+    chatSocket.onopen = async () => {
+      if (imageFiles.length > 0) {
+        const readFilesPromises = imageFiles.map((file) => {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              resolve(event.target.result); 
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+          });
+        });
+  
+        try {
+          data.images = await Promise.all(readFilesPromises);
+          chatSocket.send(JSON.stringify(data));
+        } catch (error) {
+          console.error("Error reading files: ", error);
+        }
+      } else {
+        chatSocket.send(JSON.stringify(data));
+      }
     };
+  
     
     setTimeout(() => {
       fetchMessages();
     }, 500);
     
-    // Clear input after sending message
     setMessageInput("");
+    setImageFiles([]);
   };
   
   useEffect(() => {
@@ -315,6 +342,19 @@ const handleSendMessage = () => {
       toast.error(error.response.data?.detail);
     })
   }
+
+  const handleImageChange = (e) => {
+    setImageFiles([...imageFiles, ...Array.from(e.target.files)]);
+    console.log(imageFiles);
+  };
+
+  const handleRemoveImage = (index) => {
+    const updatedImages = [...imageFiles];
+    updatedImages.splice(index, 1);
+    setImageFiles(updatedImages);
+  };
+
+  
 
   if (loading) {
     return <h1>Loading...</h1>;
@@ -476,17 +516,45 @@ const handleSendMessage = () => {
               <div ref={scroller}></div>
             </MDBTypography>
             <div className="bg-white d-flex">
-              <MDBTextArea
-                label="Message"
-                id="textAreaExample"
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                style={{ flex: "1", borderRadius: "10px", resize: 'none' }}
-              />
-
-              <MDBBtn color="info" style={{ borderRadius: '0px', marginLeft: '-8px' }} rounded onClick={handleSendMessage}>
-                <MDBIcon fas icon="angle-right" style={{ fontSize: '20px' }} />
-              </MDBBtn>
+            <MDBCard className="chat-input">
+                  <MDBCardBody>
+                    <MDBTextArea
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      label="Type your message here..."
+                    />
+                    <input
+                      type="file"
+                      onChange={handleImageChange}
+                      multiple
+                      accept="image/*"
+                    />
+                    {imageFiles.length > 0 && (
+                      <div className="uploaded-images-preview">
+                        {imageFiles.map((file, index) => (
+                          <div key={index} className="image-preview">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Image ${index + 1}`}
+                              className="uploaded-image-preview"
+                              style={{ width: "100px", height: "100px" }}
+                            />
+                            <MDBBtn
+                              size="sm"
+                              color="danger"
+                              onClick={() => handleRemoveImage(index)}
+                            >
+                              Remove
+                            </MDBBtn>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </MDBCardBody>
+                  <MDBCardFooter>
+                    <MDBBtn onClick={handleSendMessage}>Send</MDBBtn>
+                  </MDBCardFooter>
+                </MDBCard>
             </div>
           </MDBCol>
         </MDBRow>

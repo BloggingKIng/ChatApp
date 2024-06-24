@@ -1,10 +1,13 @@
 import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from api.models import Message, Room, Membership
+from api.models import Message, Room, Membership, MessageImages
 from users.models import CustomUser
 from asgiref.sync import sync_to_async
 from channels.auth import get_user
+import base64
+from django.core.files.base import ContentFile
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -39,6 +42,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
         text_data_json["id"] = message.id
+        images = text_data_json.get("images", [])
+        image_instances = []
+        for image in images:
+            format, imgstr = image.split(';base64,')
+            ext = format.split('/')[-1] 
+            image_data = sync_to_async(ContentFile)(base64.b64decode(imgstr), name=f'image.{ext}')
+            img = await sync_to_async(MessageImages.objects.create)(message=message, image=image_data)
+            image_instances.append(img)
+        
+        text_data_json["images"] = [{"id": img.id, "image": img.image.url} for img in image_instances]
         await self.send(text_data=json.dumps(text_data_json))
         await self.channel_layer.group_send(
             self.room_group_name, {"type": "chat.message", "message": text_data_json}
