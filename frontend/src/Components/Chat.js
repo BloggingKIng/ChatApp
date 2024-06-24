@@ -223,6 +223,7 @@ const handleSendMessage = () => {
         try {
           data.images = await Promise.all(readFilesPromises);
           chatSocket.send(JSON.stringify(data));
+          console.log(JSON.stringify(data))
         } catch (error) {
           console.error("Error reading files: ", error);
         }
@@ -515,46 +516,50 @@ const handleSendMessage = () => {
               ))}
               <div ref={scroller}></div>
             </MDBTypography>
-            <div className="bg-white d-flex">
-            <MDBCard className="chat-input">
-                  <MDBCardBody>
-                    <MDBTextArea
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      label="Type your message here..."
-                    />
-                    <input
-                      type="file"
-                      onChange={handleImageChange}
-                      multiple
-                      accept="image/*"
-                    />
-                    {imageFiles.length > 0 && (
-                      <div className="uploaded-images-preview">
-                        {imageFiles.map((file, index) => (
-                          <div key={index} className="image-preview">
-                            <img
-                              src={URL.createObjectURL(file)}
-                              alt={`Image ${index + 1}`}
-                              className="uploaded-image-preview"
-                              style={{ width: "100px", height: "100px" }}
-                            />
-                            <MDBBtn
-                              size="sm"
-                              color="danger"
-                              onClick={() => handleRemoveImage(index)}
-                            >
-                              Remove
-                            </MDBBtn>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </MDBCardBody>
-                  <MDBCardFooter>
-                    <MDBBtn onClick={handleSendMessage}>Send</MDBBtn>
-                  </MDBCardFooter>
-                </MDBCard>
+            <div className="" style={{ width: "100%" }}>
+              <MDBCard className="w-100 mb-2" style={{background:'transparent',boxShadow:'#eee 0px 0px'}}>
+                <MDBCardBody style={{display:'flex', flexDirection:'row',padding:'0px', borderRadius:'20px'}}>
+                  <input
+                    type="file"
+                    onChange={handleImageChange}
+                    multiple
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="imageUpload"
+                  />
+                  <label htmlFor="imageUpload" className="btn btn-secondary cbd-label" style={{margin:'0px', padding:'16px',borderRadius:'20px'}}>
+                    <MDBIcon fas icon="paperclip" size="2x" />
+                  </label>
+                  <div className="controller" style={{}}>  
+                    <textarea style={{width:'100%',height:'100%',paddingLeft:'10px'}} placeholder="Type a message..." value={messageInput} onChange={(e) => setMessageInput(e.target.value)}></textarea>
+                  </div>
+                  <MDBBtn color="primary" onClick={handleSendMessage} className="snd-btn" disabled={!messageInput && imageFiles.length === 0}>
+                  <MDBIcon fas icon="paper-plane" size="2x"/>
+                  </MDBBtn>
+                </MDBCardBody>
+                  {imageFiles.length > 0 && (
+                    <div className="d-flex flex-wrap mt-3">
+                      {imageFiles.map((file, index) => (
+                        <div key={index} className="position-relative m-1">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Image ${index + 1}`}
+                            className="uploaded-image-preview"
+                            style={{ width: "75px", height: "75px", objectFit: "cover", borderRadius: "8px" }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm position-absolute"
+                            style={{ top: "0", right: "0" }}
+                            onClick={() => handleRemoveImage(index)}
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </MDBCard>
             </div>
           </MDBCol>
         </MDBRow>

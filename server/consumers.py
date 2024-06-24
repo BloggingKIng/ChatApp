@@ -43,11 +43,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         text_data_json["id"] = message.id
         images = text_data_json.get("images", [])
+        print("imgs")
+        print(images)
         image_instances = []
         for image in images:
             format, imgstr = image.split(';base64,')
             ext = format.split('/')[-1] 
-            image_data = sync_to_async(ContentFile)(base64.b64decode(imgstr), name=f'image.{ext}')
+            image_data = await sync_to_async(ContentFile)(base64.b64decode(imgstr), name=f'image.{ext}')
             img = await sync_to_async(MessageImages.objects.create)(message=message, image=image_data)
             image_instances.append(img)
         

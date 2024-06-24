@@ -11,3 +11,32 @@
     cursor: pointer;
     opacity: 0.8;
 }
+
+.controller{
+    width: 100%;
+}
+
+.controller > * {
+    border:0px !important;
+    resize: none;
+    border-top-left-radius:0px !important;
+    border-bottom-left-radius: 0px !important;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+.controller > *:focus {
+    outline: none !important;
+    border: 0px !important;
+    outline-color: transparent !important;
+}
+
+.cbd-label {
+    border-top-right-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+}
+
+.snd-btn {
+    border-top-left-radius: 0px !important;
+    border-bottom-left-radius: 0px !important;
+    border-radius: 20px;
+}
