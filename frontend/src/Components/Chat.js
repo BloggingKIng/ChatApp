@@ -482,38 +482,61 @@ const handleSendMessage = () => {
                         {data?.message}
                       </p>
                       {data.images?.length > 0 && (
-                        <MDBRow className="mt-3" style={{width:'50%'}}>
-                          {data.images.slice(0, 3).map((image, index) => (
-                            <MDBCol md="5" className="" key={index} style={{ display:'flex',justifyContent:'center', backgroundColor:'#3b71ca', padding:'3px', paddingLeft:'5px'}}>
-                              <div className="position-relative" onClick={() => handleImageClick(index, data.images)}>
-                                <img
-                                  src={"http://127.0.0.1:8000" + image.image}
-                                  alt={`Image ${index + 1}`}
-                                  className="uploaded-image-preview img-fluid img-responsive"
-                                  style={{ height: '200px', width: '200px', cursor: 'pointer', padding:'3px' ,backgroundColor:'#3b71ca' }}
-                                />
-                              </div>
-                            </MDBCol>
-                          ))}
-                          {data.images.length > 3 && (
-                            <MDBCol md="5" className="" style={{display:'flex', justifyContent:'center', backgroundColor:'#3b71ca', padding:'3px',paddingRight:'5px'}}>
-                              <div className="position-relative" onClick={() => handleImageClick(3, data.images)}>
-                                <img
-                                  src={"http://127.0.0.1:8000" + data.images[3].image}
-                                  alt="Image 4"
-                                  className="uploaded-image-preview img-fluid img-responsive"
-                                  style={{ height: '200px', width: '200px', cursor: 'pointer', padding:'3px',backgroundColor:'#3b71ca' }}
-                                />
-                                {data.images.length > 4 && (
-                                  <div className="overlay">
-                                    +{data.images.length - 4}
+                        <div className="image-grid-wrapper">
+                          {data.images.length >= 5 ? (
+                            <MDBRow className="mt-3" style={{ width: '60%', borderRadius: '30px', margin: '10px' }}>
+                              {data.images.slice(0, 3).map((image, index) => (
+                                <MDBCol md="5" className="" key={index} style={{ display: 'flex', justifyContent: 'flex-end', marginRight: '-15px', paddingTop: '5px', backgroundColor: '#3b71ca', borderRadius: index === 0 ? "10px 0px 0px 0px" : index === 1 ? "0px 10px 0px 0px" : "0px 0px 0px 10px", paddingBottom: index === 2 ? "5px" : "" }}>
+                                  <div className="position-relative" onClick={() => handleImageClick(index, data.images)}>
+                                    <img
+                                      src={"http://127.0.0.1:8000" + image.image}
+                                      alt={`Image ${index + 1}`}
+                                      className="uploaded-image-preview img-fluid img-responsive"
+                                      style={{ height: '200px', width: '200px', cursor: 'pointer', borderRadius: '10px', padding: '3px', backgroundColor: '#3b71ca' }}
+                                    />
+                                    <div className="overlay"></div>
                                   </div>
-                                )}
+                                </MDBCol>
+                              ))}
+                              {data.images.length > 3 && (
+                                <MDBCol md="5" className="" style={{ display: 'flex', justifyContent: 'center', paddingTop: '5px', backgroundColor: '#3b71ca', borderRadius: '0px 0px 10px 0px' }}>
+                                  <div className="position-relative" onClick={() => handleImageClick(3, data.images)} style={{}}>
+                                    <img
+                                      src={"http://127.0.0.1:8000" + data.images[3].image}
+                                      alt="Image 4"
+                                      className="uploaded-image-preview img-fluid img-responsive"
+                                      style={{ height: '200px', width: '200px', background: 'transparent', cursor: 'pointer', padding: '3px', borderRadius: '10px' }}
+                                    />
+                                    {data.images.length > 4 && (
+                                      <div className="overlay img-fluid">
+                                        +{data.images.length - 4}
+                                      </div>
+                                    )}
+                                  </div>
+                                </MDBCol>
+                              )}
+                            </MDBRow>
+                          ) : (
+                            <MDBRow style={{margin:'10px'}}>  
+                              <MDBCol md="3" className="" style={{ display: 'flex', justifyContent: 'center',  backgroundColor: '#3b71ca', borderRadius: '10px' }}>
+
+                              <div className="position-relative single-image-container" style={{margin:'5px'}} onClick={() => handleImageClick(0, data.images)} >
+                                <img
+                                  src={"http://127.0.0.1:8000" + data.images[0].image}
+                                  alt="Single Image"
+                                  className="uploaded-image-preview img-fluid img-responsive"
+                                  style={{ height: '200px', width: '400px', cursor: 'pointer', borderRadius: '10px', padding: '3px', backgroundColor: '#3b71ca' }}
+                                />
+                              {data.images.length !== 1 && <div className="overlay img-fluid" style={{width:'200px'}}>
+                                  {data.images.length-1}+
+                                </div>}
                               </div>
-                            </MDBCol>
+                              </MDBCol>
+                            </MDBRow>
                           )}
-                        </MDBRow>
+                        </div>
                       )}
+
                     </MDBCardBody>
                     
                     {dropdownMessageId === data?.id && (
