@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Room, Membership, Message, Requests
+from .models import Room, Membership, Message, Requests, MessageImages
 from .serializers import RoomSerializer, MembershipSerializer, UserSerializer, MessageSerializer, RequestSerializer
 from django.core.exceptions import ObjectDoesNotExist
 from channels.layers import get_channel_layer
@@ -236,10 +236,16 @@ def remove_message(request, message_id):
     if message.sender == request.user:
         message.message = 'This message was deleted by the sender!'
         message.message_type = 'delete'
+        images = MessageImages.objects.filter(message=message)
+        for image in images:
+            image.delete()
         message.save()
     elif Membership.objects.filter(user=request.user, room=message.room, is_admin=True).exists():
         message.message = 'This message was deleted by the admin!'
         message.message_type = 'delete'
+        images = MessageImages.objects.filter(message=message)
+        for image in images:
+            image.delete()
         message.save()
     else:
         return Response(status=status.HTTP_403_FORBIDDEN)

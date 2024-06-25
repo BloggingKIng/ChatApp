@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MDBContainer, MDBRow, MDBCol, MDBCard, MDBCardBody, MDBIcon, MDBTypography, MDBTextArea, MDBCardHeader, MDBBtn, MDBCardFooter, 
 MDBFooter, MDBModal, MDBModalDialog, MDBModalContent, MDBModalHeader, MDBModalTitle, MDBModalBody, MDBModalFooter, MDBCarousel, 
-MDBCarouselItem, 
+MDBCarouselItem, MDBRipple
 
 } from "mdb-react-ui-kit";
 import {Carousel} from 'react-bootstrap';
@@ -10,6 +10,8 @@ import api from "../api";
 import './chat.css'
 import { toast, ToastContainer } from 'react-toastify'
 import { useNavigate } from "react-router-dom";
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -196,7 +198,7 @@ return () => {
 
 const handleSendMessage = () => {
   // Send message to WebSocket server
-  if (!messageInput) {
+  if (!messageInput && imageFiles.length == 0) {
     return;
   }
   const data = {
@@ -211,8 +213,6 @@ const handleSendMessage = () => {
       `ws://127.0.0.1:8000/ws/chat/${window.location.href.split("/").reverse()[0]}/`
     );
 
-    
-    
     chatSocket.onopen = async () => {
       if (imageFiles.length > 0) {
         const readFilesPromises = imageFiles.map((file) => {
@@ -487,50 +487,56 @@ const handleSendMessage = () => {
                             <MDBRow className="mt-3" style={{ width: '60%', borderRadius: '30px', margin: '10px' }}>
                               {data.images.slice(0, 3).map((image, index) => (
                                 <MDBCol md="5" className="" key={index} style={{ display: 'flex', justifyContent: 'flex-end', marginRight: '-15px', paddingTop: '5px', backgroundColor: '#3b71ca', borderRadius: index === 0 ? "10px 0px 0px 0px" : index === 1 ? "0px 10px 0px 0px" : "0px 0px 0px 10px", paddingBottom: index === 2 ? "5px" : "" }}>
-                                  <div className="position-relative" onClick={() => handleImageClick(index, data.images)}>
-                                    <img
-                                      src={"http://127.0.0.1:8000" + image.image}
-                                      alt={`Image ${index + 1}`}
-                                      className="uploaded-image-preview img-fluid img-responsive"
-                                      style={{ height: '200px', width: '200px', cursor: 'pointer', borderRadius: '10px', padding: '3px', backgroundColor: '#3b71ca' }}
-                                    />
-                                    <div className="overlay"></div>
-                                  </div>
+                                  <MDBRipple rippleTag="a">
+                                    <div className="position-relative" onClick={() => handleImageClick(index, data.images)}>
+                                      <img
+                                        src={"http://127.0.0.1:8000" + image.image}
+                                        alt={`Image ${index + 1}`}
+                                        className="uploaded-image-preview img-fluid img-responsive shadow-4-strong hover-overlay"
+                                        style={{ height: '200px', width: '200px', cursor: 'pointer', borderRadius: '10px', padding: '3px', backgroundColor: '#3b71ca' }}
+                                      />
+                                      {/* <div className="overlay"></div> */}
+                                    </div>
+                                  </MDBRipple>
                                 </MDBCol>
                               ))}
                               {data.images.length > 3 && (
                                 <MDBCol md="5" className="" style={{ display: 'flex', justifyContent: 'center', paddingTop: '5px', backgroundColor: '#3b71ca', borderRadius: '0px 0px 10px 0px' }}>
-                                  <div className="position-relative" onClick={() => handleImageClick(3, data.images)} style={{}}>
-                                    <img
-                                      src={"http://127.0.0.1:8000" + data.images[3].image}
-                                      alt="Image 4"
-                                      className="uploaded-image-preview img-fluid img-responsive"
-                                      style={{ height: '200px', width: '200px', background: 'transparent', cursor: 'pointer', padding: '3px', borderRadius: '10px' }}
-                                    />
-                                    {data.images.length > 4 && (
-                                      <div className="overlay img-fluid">
-                                        +{data.images.length - 4}
-                                      </div>
-                                    )}
-                                  </div>
+                                  <MDBRipple rippleTag="a">  
+                                    <div className="position-relative" onClick={() => handleImageClick(3, data.images)} style={{}}>
+                                      <img
+                                        src={"http://127.0.0.1:8000" + data.images[3].image}
+                                        alt="Image 4"
+                                        className="uploaded-image-preview img-fluid img-responsive shadow-4-strong hover-overlay"
+                                        style={{ height: '200px', width: '200px', background: 'transparent', cursor: 'pointer', padding: '3px', borderRadius: '10px' }}
+                                      />
+                                      {data.images.length > 4 && (
+                                        <div className="overlay img-fluid">
+                                          +{data.images.length - 4}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </MDBRipple>
                                 </MDBCol>
                               )}
                             </MDBRow>
                           ) : (
                             <MDBRow style={{margin:'10px'}}>  
-                              <MDBCol md="3" className="" style={{ display: 'flex', justifyContent: 'center',  backgroundColor: '#3b71ca', borderRadius: '10px' }}>
-
-                              <div className="position-relative single-image-container" style={{margin:'5px'}} onClick={() => handleImageClick(0, data.images)} >
-                                <img
-                                  src={"http://127.0.0.1:8000" + data.images[0].image}
-                                  alt="Single Image"
-                                  className="uploaded-image-preview img-fluid img-responsive"
-                                  style={{ height: '200px', width: '400px', cursor: 'pointer', borderRadius: '10px', padding: '3px', backgroundColor: '#3b71ca' }}
-                                />
-                              {data.images.length !== 1 && <div className="overlay img-fluid" style={{width:'200px'}}>
-                                  {data.images.length-1}+
-                                </div>}
-                              </div>
+                              <MDBCol md="5" className="" style={{ display: 'flex', justifyContent: 'center',  backgroundColor: '#3b71ca', borderRadius: '10px' }}>
+                                <MDBRipple rippleTag={"a"}>
+                                  <div className="position-relative single-image-container" style={{margin:'5px'}} onClick={() => handleImageClick(0, data.images)} >
+                                    <img
+                                      src={"http://127.0.0.1:8000" + data.images[0].image}
+                                      alt="Single Image"
+                                      className="uploaded-image-preview img-fluid img-responsive shadow-4-strong hover-overlay"
+                                      style={{ height: '200px', width: 'auto', cursor: 'pointer', borderRadius: '10px', padding: '0px', backgroundColor: '#3b71ca' }}
+                                    />
+                                  {data.images.length !== 1 && <div className="overlay img-fluid" md="5">
+                                      {data.images.length-1}+
+                                    </div>
+                                    }
+                                  </div>
+                                </MDBRipple>
                               </MDBCol>
                             </MDBRow>
                           )}
@@ -665,38 +671,55 @@ const handleSendMessage = () => {
         </MDBModal>
         <MDBModal open={carouselOpen} onClose={closeModal} size="lg">
           <MDBModalBody>
-            <div style={{display:'flex', justifyContent:'flex-end',margin:'0 auto', width:'80%'}}>
-              <span className='' color='white' onClick={closeModal} style={{cursor:'pointer'}}>
-                <MDBIcon icon='times' size='2x' color="white"/>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '0 auto', width: '80%' }}>
+              <span className='' color='white' onClick={closeModal} style={{ cursor: 'pointer' }}>
+                <MDBIcon icon='times' size='2x' color="white" />
               </span>
             </div>
-            <div className="d-flex align-items-center" style={{width:'80%', margin:'0 auto', 
-              justifyContent:currentImages.length>1?'space-between':'center'
-            }}>
-              {currentImages.length>1 && <MDBBtn color="primary" onClick={goToPreviousImage} style={{ zIndex: 1 }}>
+            <div className="d-flex align-items-center" style={{ width: '80%', margin: '0 auto', justifyContent: currentImages.length > 1 ? 'space-between' : 'center' }}>
+              {currentImages.length > 1 && <MDBBtn color="primary" onClick={goToPreviousImage} style={{ zIndex: 1 }}>
                 <MDBIcon icon="angle-left" size="2x" />
               </MDBBtn>}
               <Carousel defaultActiveIndex={currentImageIndex} activeIndex={currentImageIndex} controls={false} indicators={false} slide={false}>
-                  {currentImages.map((image, index) => (
-                    <Carousel.Item itemId={index + 1} key={index}>
-                     
-                      <div style={{width:'80%',height:'70vh', display:'flex',alignContent:'center',alignItems:'center', margin:'20px auto', justifyContent:'center'}}>
-                        <img
-                          src={"http://127.0.0.1:8000" + image.image}
-                          alt={`Image ${index + 1}`}
-                          className="img-fluid img-responsive"
-                          style={{width:'auto', margin:'auto', height:'auto',}}
-                        />
-                      </div>
-                    </Carousel.Item>
-                  ))}
+                {currentImages.map((image, index) => (
+                  <Carousel.Item itemId={index + 1} key={index}>
+                      <Zoom>
+                        <div style={{ width: '80%', height: '70vh', display: 'flex', alignContent: 'center', alignItems: 'center', margin: '20px auto', justifyContent: 'center' }}>
+                            <img
+                              src={"http://127.0.0.1:8000" + image.image}
+                              alt={`Image ${index + 1}`}
+                              className="img-fluid shadow-4-strong hover-overlay"
+                              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                            />
+                        </div>
+                      </Zoom>
+                  </Carousel.Item>
+                ))}
               </Carousel>
-              {currentImages.length>1&&<MDBBtn color="primary" onClick={goToNextImage} style={{ zIndex: 1 }}>
+              {currentImages.length > 1 && <MDBBtn color="primary" onClick={goToNextImage} style={{ zIndex: 1 }}>
                 <MDBIcon icon="angle-right" size="2x" />
               </MDBBtn>}
             </div>
+            <div className="d-flex justify-content-center mt-3">
+              {currentImages.map((image, index) => (
+                <div key={index} className="m-1" onClick={() => setCurrentImageIndex(index)} style={{ cursor: 'pointer' }}>
+                  <img
+                    src={"http://127.0.0.1:8000" + image.image}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="img-thumbnail"
+                    style={{
+                      height: '50px',
+                      width: '50px',
+                      border: currentImageIndex === index ? '2px solid #3b71ca' : '2px solid transparent',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </MDBModalBody>
         </MDBModal>
+
 
       </MDBContainer>
     </>
