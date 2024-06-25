@@ -12,6 +12,8 @@ import { toast, ToastContainer } from 'react-toastify'
 import { useNavigate } from "react-router-dom";
 import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
+import {ReactMic} from 'react-mic';
+import { FaMicrophone, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -31,6 +33,10 @@ export default function Chat() {
   const [carouselOpen, setCarouselOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentImages, setCurrentImages] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState(null);
+  const [isRecordingVisible, setIsRecordingVisible] = useState(false);
+
 
   const scroller = useRef(null);
   const navigator = useNavigate();
@@ -380,6 +386,29 @@ const handleSendMessage = () => {
   const goToPreviousImage = () => {
     setCurrentImageIndex((prevIndex) => (prevIndex - 1 + currentImages.length) % currentImages.length);
   };
+
+  const startRecording = () => {
+    setIsRecording(true);
+  };
+  
+  const stopRecording = () => {
+    setIsRecording(false);
+  };
+  
+  const onStop = (recordedBlob) => {
+    setRecordedBlob(recordedBlob);
+  };
+  
+  const cancelRecording = () => {
+    setIsRecordingVisible(false);
+    setRecordedBlob(null);
+  };
+  
+  const acceptRecording = () => {
+    setIsRecordingVisible(false);
+    setRecordedBlob(null);
+  };
+  
   
 
   if (loading) {
@@ -615,9 +644,32 @@ const handleSendMessage = () => {
                   <label htmlFor="imageUpload" className="btn btn-secondary cbd-label" style={{margin:'0px', padding:'16px',borderRadius:'20px'}}>
                     <MDBIcon fas icon="paperclip" size="2x" />
                   </label>
-                  <div className="controller" style={{}}>  
+                    {isRecordingVisible && (
+                      <div className="audio-recorder">
+                        <ReactMic
+                          record={isRecording}
+                          className="sound-wave"
+                          onStop={onStop}
+                          visualSetting="sinewave"
+                        />
+                        <div className="recorder-controls">
+                          {isRecording ? (
+                            <button onClick={stopRecording}><FaCheck /></button>
+                          ) : (
+                            <>
+                              <button onClick={startRecording}><FaMicrophone /></button>
+                              {recordedBlob && <button onClick={acceptRecording}><FaCheck /></button>}
+                              <button onClick={cancelRecording}><FaTimes /></button>
+                            </>
+                          )}
+                        </div>
+                      </div>)}
+
+                  {!isRecordingVisible && <div className="controller" style={{}}>  
                     <textarea style={{width:'100%',height:'100%',paddingLeft:'10px'}} placeholder="Type a message..." value={messageInput} onChange={(e) => setMessageInput(e.target.value)}></textarea>
-                  </div>
+                  </div>}
+                  <MDBBtn onClick={() => setIsRecordingVisible(true)}><FaMicrophone size={'24'}/></MDBBtn>
+
                   <MDBBtn color="primary" onClick={handleSendMessage} className="snd-btn" disabled={!messageInput && imageFiles.length === 0}>
                   <MDBIcon fas icon="paper-plane" size="2x"/>
                   </MDBBtn>
