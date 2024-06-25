@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Room, Membership, Message, Requests, MessageImages
+from .models import Room, Membership, Message, Requests, MessageImages, MessageVoice
 from django.contrib.auth import get_user_model
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,10 +28,15 @@ class ImagesSerializer(serializers.ModelSerializer):
         model = MessageImages
         fields = ['id', 'image']
 
+class VoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MessageVoice
+        fields = ['id', 'voice']
+
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer()
     images = ImagesSerializer(many=True, read_only=True)
-
+    voice = VoiceSerializer(many=True, read_only=True)
     class Meta:
         model = Message
         fields = '__all__'

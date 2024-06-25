@@ -1,7 +1,7 @@
 import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from api.models import Message, Room, Membership, MessageImages
+from api.models import Message, Room, Membership, MessageImages, MessageVoice
 from users.models import CustomUser
 from asgiref.sync import sync_to_async
 from channels.auth import get_user
@@ -54,6 +54,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
             image_instances.append(img)
         
         text_data_json["images"] = [{"id": img.id, "image": img.image.url} for img in image_instances]
+        voice = text_data_json.get("voice")
+        voice_instance = None
+        if voice:
+            format, voicestr = voice.split(';base64,')
+            ext = format.split('/')[-1]
+            voice_data = await sync_to_async(ContentFile)(base64.b64decode(voicestr), name=f'voice.{ext}')
+            voice_instance = await sync_to_async(MessageVoice.objects.create)(message=message, voice=voice_data)
+            text_data_json["voice"] = {"id": voice_instance.id, "voice": voice_instance.voice.url}
+
         await self.send(text_data=json.dumps(text_data_json))
         await self.channel_layer.group_send(
             self.room_group_name, {"type": "chat.message", "message": text_data_json}

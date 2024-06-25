@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MDBContainer, MDBRow, MDBCol, MDBCard, MDBCardBody, MDBIcon, MDBTypography, MDBTextArea, MDBCardHeader, MDBBtn, MDBCardFooter, 
 MDBFooter, MDBModal, MDBModalDialog, MDBModalContent, MDBModalHeader, MDBModalTitle, MDBModalBody, MDBModalFooter, MDBCarousel, 
-MDBCarouselItem, MDBRipple
+MDBCarouselItem, MDBRipple, MDBSpinner
 
 } from "mdb-react-ui-kit";
 import {Carousel} from 'react-bootstrap';
@@ -388,6 +388,7 @@ const handleSendMessage = () => {
   };
 
   const startRecording = () => {
+    setIsRecordingVisible(true);
     setIsRecording(true);
   };
   
@@ -408,8 +409,8 @@ const handleSendMessage = () => {
     setIsRecordingVisible(false);
     setRecordedBlob(null);
   };
-  
-  
+
+  const audioRef = useRef(null);
 
   if (loading) {
     return <h1>Loading...</h1>;
@@ -632,7 +633,7 @@ const handleSendMessage = () => {
             </MDBTypography>
             <div className="" style={{ width: "100%" }}>
               <MDBCard className="w-100 mb-2" style={{background:'transparent',boxShadow:'#eee 0px 0px'}}>
-                <MDBCardBody style={{display:'flex', flexDirection:'row',padding:'0px', borderRadius:'20px'}}>
+                <MDBCardBody style={{display:'flex', flexDirection:'row',padding:'0px', borderRadius:'20px',justifyContent:'center'}}>
                   <input
                     type="file"
                     onChange={handleImageChange}
@@ -650,26 +651,43 @@ const handleSendMessage = () => {
                           record={isRecording}
                           className="sound-wave"
                           onStop={onStop}
-                          visualSetting="sinewave"
+                          visualSetting="none"
+                          style={{borderRadius:'20px'}}
                         />
-                        <div className="recorder-controls">
-                          {isRecording ? (
-                            <button onClick={stopRecording}><FaCheck /></button>
-                          ) : (
-                            <>
-                              <button onClick={startRecording}><FaMicrophone /></button>
-                              {recordedBlob && <button onClick={acceptRecording}><FaCheck /></button>}
-                              <button onClick={cancelRecording}><FaTimes /></button>
-                            </>
-                          )}
+                        <div className="recording-indicator">
+                          {isRecording && 
+                          <div style={{width:'100%', display:'flex',justifyContent:'center'}}>
+                            <MDBSpinner grow color='primary'>
+                              <span className='visually-hidden'>Loading...</span>
+                            </MDBSpinner>
+                            <h5 style={{color:'black', marginLeft:'10px'}}>
+                              Recording ..
+                            </h5>
+                          </div>
+                          }
                         </div>
                       </div>)}
+                      {recordedBlob !== null && (
+                        <div>
+                          <audio ref={audioRef} src={recordedBlob.blobURL} controls />
+                          {/* <MDBBtn onClick={() => {setRecordedBlob(null);setIsRecordingVisible(false);}}>
+                            <MDBIcon fas icon="trash-alt" />
+                          </MDBBtn> */}
+                        </div>
+                      )}
+
 
                   {!isRecordingVisible && <div className="controller" style={{}}>  
                     <textarea style={{width:'100%',height:'100%',paddingLeft:'10px'}} placeholder="Type a message..." value={messageInput} onChange={(e) => setMessageInput(e.target.value)}></textarea>
                   </div>}
-                  <MDBBtn onClick={() => setIsRecordingVisible(true)}><FaMicrophone size={'24'}/></MDBBtn>
-
+                  {
+                    !isRecordingVisible && (<MDBBtn onClick={()=>{setIsRecordingVisible(true)}}><FaMicrophone size={'24'}/></MDBBtn>)
+                  }
+                  {
+                    isRecordingVisible && (
+                      isRecording ? (<MDBBtn onClick={stopRecording}><FaCheck size={'24'}/></MDBBtn>) : (<MDBBtn onClick={startRecording} style={{display:'flex', justifyContent:'center',alignContent:'center',alignItems:'center'}}><FaMicrophone size={'24'}/>Start Recording</MDBBtn>)
+                    )
+                  }
                   <MDBBtn color="primary" onClick={handleSendMessage} className="snd-btn" disabled={!messageInput && imageFiles.length === 0}>
                   <MDBIcon fas icon="paper-plane" size="2x"/>
                   </MDBBtn>
