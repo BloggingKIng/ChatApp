@@ -202,9 +202,19 @@ return () => {
 };
 });
 
+const arrayBufferToBase64 = (buffer) => {
+  var reader = new window.FileReader();
+  reader.readAsDataURL(buffer); 
+  reader.onloadend = function() {
+  let base64 = reader.result;
+  base64 = base64.split(',')[1];
+  return base64
+}
+};
+
 const handleSendMessage = () => {
   // Send message to WebSocket server
-  if (!messageInput && imageFiles.length == 0) {
+  if (!messageInput && imageFiles.length == 0 && recordedBlob == null) {
     return;
   }
   const data = {
@@ -234,14 +244,21 @@ const handleSendMessage = () => {
   
         try {
           data.images = await Promise.all(readFilesPromises);
-          chatSocket.send(JSON.stringify(data));
           console.log(JSON.stringify(data))
         } catch (error) {
           console.error("Error reading files: ", error);
         }
-      } else {
-        chatSocket.send(JSON.stringify(data));
+      } 
+      if (recordedBlob) {
+        const reader = new FileReader();
+        reader.readAsDataURL(recordedBlob.blob); 
+        reader.onloadend = function() {
+          const base64Audio = reader.result;
+          data.voice = base64Audio;
+          chatSocket.send(JSON.stringify(data));
+        };
       }
+      chatSocket.send(JSON.stringify(data));
     };
   
     
@@ -633,7 +650,7 @@ const handleSendMessage = () => {
             </MDBTypography>
             <div className="" style={{ width: "100%" }}>
               <MDBCard className="w-100 mb-2" style={{background:'transparent',boxShadow:'#eee 0px 0px'}}>
-                <MDBCardBody style={{display:'flex', flexDirection:'row',padding:'0px', borderRadius:'20px',justifyContent:'center'}}>
+                <MDBCardBody style={{display:'flex', flexDirection:'row',padding:'0px', borderRadius:'20px',justifyContent:'space-between'}}>
                   <input
                     type="file"
                     onChange={handleImageChange}
@@ -646,7 +663,7 @@ const handleSendMessage = () => {
                     <MDBIcon fas icon="paperclip" size="2x" />
                   </label>
                     {isRecordingVisible && (
-                      <div className="audio-recorder">
+                      <div className="audio-recorder" style={{display:isRecording?'block':'none', border:'1px solid #eee'}}>
                         <ReactMic
                           record={isRecording}
                           className="sound-wave"
@@ -683,14 +700,22 @@ const handleSendMessage = () => {
                   {
                     !isRecordingVisible && (<MDBBtn onClick={()=>{setIsRecordingVisible(true)}}><FaMicrophone size={'24'}/></MDBBtn>)
                   }
-                  {
-                    isRecordingVisible && (
-                      isRecording ? (<MDBBtn onClick={stopRecording}><FaCheck size={'24'}/></MDBBtn>) : (<MDBBtn onClick={startRecording} style={{display:'flex', justifyContent:'center',alignContent:'center',alignItems:'center'}}><FaMicrophone size={'24'}/>Start Recording</MDBBtn>)
-                    )
-                  }
-                  <MDBBtn color="primary" onClick={handleSendMessage} className="snd-btn" disabled={!messageInput && imageFiles.length === 0}>
-                  <MDBIcon fas icon="paper-plane" size="2x"/>
-                  </MDBBtn>
+                  <div style={{display:'flex'}}>
+                    {
+                      (isRecordingVisible && !isRecording) ? (
+                        <MDBBtn style={{borderRadius:'0px'}} color="danger" onClick={cancelRecording}>{isRecording? (<FaTimes size={'24'}/>):(<FaTrash size={'24'} />) } Cancel </MDBBtn>
+                      ) :null
+                    }
+
+                    {
+                      isRecordingVisible && (
+                        isRecording ? (<MDBBtn style={{borderRadius:'0px'}} onClick={stopRecording}><FaCheck size={'24'}/></MDBBtn>) : !isRecording && recordedBlob == null && (<MDBBtn onClick={startRecording} style={{display:'flex', justifyContent:'center',alignContent:'center',alignItems:'center'}}><FaMicrophone size={'24'}/>Start Recording</MDBBtn>)
+                      )
+                    }
+                    <MDBBtn color="primary" onClick={handleSendMessage} className="snd-btn" disabled={!messageInput && imageFiles.length === 0 && recordedBlob == null}>
+                      <MDBIcon fas icon="paper-plane" size="2x"/>
+                    </MDBBtn>
+                  </div>
                 </MDBCardBody>
                   {imageFiles.length > 0 && (
                     <div className="d-flex flex-wrap mt-3">

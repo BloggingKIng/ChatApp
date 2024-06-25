@@ -7,7 +7,8 @@ from asgiref.sync import sync_to_async
 from channels.auth import get_user
 import base64
 from django.core.files.base import ContentFile
-
+import os
+from django.conf import settings
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -57,11 +58,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         voice = text_data_json.get("voice")
         voice_instance = None
         if voice:
-            format, voicestr = voice.split(';base64,')
-            ext = format.split('/')[-1]
-            voice_data = await sync_to_async(ContentFile)(base64.b64decode(voicestr), name=f'voice.{ext}')
-            voice_instance = await sync_to_async(MessageVoice.objects.create)(message=message, voice=voice_data)
-            text_data_json["voice"] = {"id": voice_instance.id, "voice": voice_instance.voice.url}
+            audio_data = base64.b64decode(voice)
+            print(audio_data) 
+            audio_file_name = f'audio_{self.room_name}_{sender}_.webm'
+            audio_file_path = os.path.join(settings.MEDIA_ROOT, 'audio', audio_file_name)
+
+            os.makedirs(os.path.dirname(audio_file_path), exist_ok=True)
+
+            with open(audio_file_path, 'wb') as audio_file:
+                audio_file.write(audio_data)
 
         await self.send(text_data=json.dumps(text_data_json))
         await self.channel_layer.group_send(
