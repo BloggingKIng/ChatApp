@@ -59,15 +59,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         voice_instance = None
         if voice:
             audio_data = base64.b64decode(voice)
-            print(audio_data) 
-            audio_file_name = f'audio_{self.room_name}_{sender}_.webm'
-            audio_file_path = os.path.join(settings.MEDIA_ROOT, 'audio', audio_file_name)
-
-            os.makedirs(os.path.dirname(audio_file_path), exist_ok=True)
-
-            with open(audio_file_path, 'wb') as audio_file:
-                audio_file.write(audio_data)
-
+            voice_instance = await sync_to_async(MessageVoice.objects.create)(message=message, voice=ContentFile(audio_data, name=f'voice.webm'))
+            text_data_json["voice"] = [{"id": voice_instance.id, "voice": voice_instance.voice.url}]
+            print(text_data_json)
         await self.send(text_data=json.dumps(text_data_json))
         await self.channel_layer.group_send(
             self.room_group_name, {"type": "chat.message", "message": text_data_json}

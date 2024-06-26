@@ -36,6 +36,7 @@ export default function Chat() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [isRecordingVisible, setIsRecordingVisible] = useState(false);
+  const [audios, setAudios] = useState([]);
 
 
   const scroller = useRef(null);
@@ -177,6 +178,7 @@ export default function Chat() {
   }
   
   else {
+    console.log(data)
     setMessages((prevMessages) => [...prevMessages, {...data.message, message_type:'text'}]);
   }
   
@@ -201,16 +203,6 @@ return () => {
   };
 };
 });
-
-const arrayBufferToBase64 = (buffer) => {
-  var reader = new window.FileReader();
-  reader.readAsDataURL(buffer); 
-  reader.onloadend = function() {
-  let base64 = reader.result;
-  base64 = base64.split(',')[1];
-  return base64
-}
-};
 
 const handleSendMessage = () => {
   // Send message to WebSocket server
@@ -250,15 +242,21 @@ const handleSendMessage = () => {
         }
       } 
       if (recordedBlob) {
-        const reader = new FileReader();
+        try{const reader = new FileReader();
         reader.readAsDataURL(recordedBlob.blob); 
         reader.onloadend = function() {
-          const base64Audio = reader.result;
+          const base64Audio = reader.result.split(',')[1];
           data.voice = base64Audio;
           chatSocket.send(JSON.stringify(data));
-        };
+        };}
+        catch {
+          console.log("Error reading audio file");
+          chatSocket.send(JSON.stringify(data));
+        }
       }
-      chatSocket.send(JSON.stringify(data));
+      else{
+        chatSocket.send(JSON.stringify(data));
+      }
     };
   
     
@@ -267,6 +265,9 @@ const handleSendMessage = () => {
     }, 500);
     
     setMessageInput("");
+    setIsRecordingVisible(false);
+    setRecordedBlob(null);
+    setIsRecording(false);
     setImageFiles([]);
   };
   
@@ -429,6 +430,31 @@ const handleSendMessage = () => {
 
   const audioRef = useRef(null);
 
+  const handleTrackAudio = () =>{
+    const ads = [];
+    messages.map((message) => {
+      if (message.voice?.length > 0) {
+        ads.push(message.voice[0].id);
+      }
+    });
+
+    setAudios(ads);
+  }
+
+  const handlePlay = (id) => {
+    const nextAudios = audios.filter((audio) => audio > id)
+    if (nextAudios.length > 0) {
+      const nextAdudio = nextAudios[0]
+      const audio = document.getElementById(nextAdudio);
+      audio.scrollIntoView({behavior: "smooth"});
+      audio.play();
+    }
+  }
+
+  useEffect(() => {
+    handleTrackAudio();
+  }, [messages])
+
   if (loading) {
     return <h1>Loading...</h1>;
   }
@@ -528,6 +554,13 @@ const handleSendMessage = () => {
                       <p className="mb-0" style={(data?.message_type === 'delete' || (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle: 'italic' } : data?.message_type === 'join' ? { color: 'green', fontWeight: 'bold' } : data?.message_type === 'leave' ? { color: '#e0ab19', fontWeight: 'bold', fontStyle: 'italic' } : data.message_type === 'admin' ? { color: '#41fc41', fontWeight: 'bold' } : null}>
                         {data?.message}
                       </p>
+                      {
+                        data.voice?.length > 0 && (
+                          <div>
+                            <audio id={data.voice[0].id} src={"http://127.0.0.1:8000" + data.voice[0].voice} controls onEnded={()=>handlePlay(data.voice[0].id)} />
+                          </div>
+                        )
+                      }
                       {data.images?.length > 0 && (
                         <div className="image-grid-wrapper">
                           {data.images.length >= 5 ? (
