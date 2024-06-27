@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Room, Membership, Message, Requests, MessageImages, MessageVoice
+from .models import Room, Membership, Message, Requests, MessageImages, MessageVoice, Notification
 from django.contrib.auth import get_user_model
 
 class UserSerializer(serializers.ModelSerializer):
@@ -47,3 +47,9 @@ class RequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Requests
         fields = ['id', 'requester', 'room', 'request_message', 'declined', 'request_type', 'sentdate', 'accepted']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    class Meta:
+        model = Notification
+        fields = '__all__'

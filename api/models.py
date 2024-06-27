@@ -46,3 +46,10 @@ class MessageImages(models.Model):
 class MessageVoice(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='voice')
     voice = models.FileField(upload_to='voices/')
+
+#Notifications Model
+class Notification(models.Model):
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    message = models.TextField()
+    sentdate = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)

@@ -81,10 +81,12 @@ def request_group_membership(request):
     alreadyRequested = Requests.objects.filter(requester=request.user, room=room, accepted=False, declined=False).exists()
     if alreadyRequested:
         return Response({'detail':'A request from you to join this group is already pending!'},status=status.HTTP_400_BAD_REQUEST)
-    isDeclinedin24hours = Requests.objects.filter(requester=request.user, room=room, declined=True)
-    if (len(isDeclinedin24hours) >= 1) and (sentdate > remainingTime):
+    isDeclinedin24hours = Requests.objects.filter(requester=request.user, room=room, declined=True).order_by('-sentdate')
+    if len(isDeclinedin24hours) >= 1:
         sentdate = isDeclinedin24hours[0].sentdate
         remainingTime = timezone.make_aware(datetime.now() - timedelta(hours=24),isDeclinedin24hours[0].sentdate.tzinfo)
+
+    if (len(isDeclinedin24hours) >= 1) and (sentdate > remainingTime):
         print('Here huh')
         sent_date = isDeclinedin24hours[0].sentdate
         current_time = timezone.now()
@@ -127,6 +129,16 @@ def accept_or_decline_request(request):
         )
         req.accepted = True
     else:
+        message = Message.objects.create(sender=req.requester, room=req.room, message=f'A request to join the group from {req.requester.username} has been declined by {request.user.username}', message_type='decline')
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{req.room.id}",
+            {
+                "type": "message.decline",
+                "message_id": message.id,
+                "message":MessageSerializer(message).data
+            }
+        )
         req.declined = True
     req.save()
     return Response(status=status.HTTP_200_OK)

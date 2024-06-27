@@ -37,32 +37,40 @@ export default function Chat() {
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [isRecordingVisible, setIsRecordingVisible] = useState(false);
   const [audios, setAudios] = useState([]);
-
-
+  
   const scroller = useRef(null);
   const navigator = useNavigate();
-
+  
   const fetchMessages = () => {
     api
-      .post(`/api/messages/`, { id: window.location.href.split("/").reverse()[0] })
-      .then((response) => {
-        setMessages(response.data);
-        console.log("msg")
-        console.log(response.data);
-      })
-      .catch((error) => {
-        setEmpty(true);
-      })
+    .post(`/api/messages/`, { id: window.location.href.split("/").reverse()[0] })
+    .then((response) => {
+      setMessages(response.data);
+      console.log("msg")
+      console.log(response.data);
+    })
+    .catch((error) => {
+      setEmpty(true);
+    })
   }
-
+  const fetchRequests = async () => {
+    try {
+      const response = await api.post(`/api/requests/`, { id: window.location.href.split("/").reverse()[0] });
+      setRequests(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
   const fetchRoomDetails = async () => {
     await api.get(`/api/room-details/${window.location.href.split("/").reverse()[0]}/`)
-      .then((response) => {
+    .then((response) => {
         setRoomDetails(response.data);
         console.log(response.data)
       })
       .catch((error) => {
-       toast.error(error.response.data?.detail)
+        toast.error(error.response.data?.detail)
       })
   }
 
@@ -90,21 +98,12 @@ export default function Chat() {
     return adminUser.includes(username);
   }
   
-  const fetchRequests = async () => {
-    try {
-      const response = await api.post(`/api/requests/`, { id: window.location.href.split("/").reverse()[0] });
-      setRequests(response.data);
-      console.log(response.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
-  useEffect(() => {
-    const intervalId = setInterval(fetchRequests, 5000);
+  // useEffect(() => {
+  //   const intervalId = setInterval(fetchRequests, 5000);
     
-    return () => clearInterval(intervalId);
-  }, []);
+  //   return () => clearInterval(intervalId);
+  // }, []);
   
   const fetchUserDetails = async () => {
     await api.get(`/api/user_details/`)
@@ -117,6 +116,7 @@ export default function Chat() {
   useEffect(() => {
     fetchMessages();
     fetchUserDetails();
+    fetchRequests();
     fetchMembers();
     fetchRoomDetails();
   }, [])
@@ -172,13 +172,19 @@ export default function Chat() {
     fetchMembers();
   }
 
-  else if (data.type === 'join_request'){
+  else if (data.type === 'join_request' && userIsAdmin(user.username)){
     console.log('join_request')
+    console.log(data)
+    setRequests((prevRequests) => [...prevRequests, data.request]);
   }
 
   else if (data.type === 'admin'){
     setMessages((prevMessages) => [...prevMessages, {...data.message, message_type: "admin", sender: data.message.sender, sentdate: data.message.sentdate}]);
     fetchMembers();
+  }
+
+  else if (data.type === 'decline') {
+    setMessages((prevMessages)=>[...prevMessages, {...data.message, message_type: "decline", sender: data.message.sender, sentdate: data.message.sentdate}]);
   }
   
   else {
@@ -288,7 +294,8 @@ const handleSendMessage = () => {
   const handleAcceptRequest = (id) => {
     api.post(`/api/accept_decline_request/`, { id: id, action: "accept" }).then((response) => {
       toast.success("Request Accepted!");
-      fetchRequests();
+      setRequests((prevRequests) => prevRequests.filter((request) => request.id !== id));
+      // fetchRequests();
       fetchMembers();
     });
   };
@@ -296,7 +303,8 @@ const handleSendMessage = () => {
   const handleDeclineRequest = (id) => {
     api.post(`/api/accept_decline_request/`, { id: id, action: "decline" }).then((response) => {
       toast.success("Request Declined!");
-      fetchRequests();
+      setRequests((prevRequests) => prevRequests.filter((request) => request.id !== id));
+      // fetchRequests();
       fetchMembers();
     });
   };
@@ -555,7 +563,7 @@ const handleSendMessage = () => {
                       </p>
                     </MDBCardHeader>
                     <MDBCardBody style={{ padding: '10px' }}>
-                      <p className="mb-0" style={(data?.message_type === 'delete' || (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle: 'italic' } : data?.message_type === 'join' ? { color: 'green', fontWeight: 'bold' } : data?.message_type === 'leave' ? { color: '#e0ab19', fontWeight: 'bold', fontStyle: 'italic' } : data.message_type === 'admin' ? { color: '#41fc41', fontWeight: 'bold' } : null}>
+                      <p className="mb-0" style={(data?.message_type === 'delete' || data?.message_type === 'decline' || (data?.message_type === 'member_remove')) ? { color: 'red', fontStyle: 'italic' } : data?.message_type === 'join' ? { color: 'green', fontWeight: 'bold' } : data?.message_type === 'leave' ? { color: '#e0ab19', fontWeight: 'bold', fontStyle: 'italic' } : data.message_type === 'admin' ? { color: '#41fc41', fontWeight: 'bold' } : null}>
                         {data?.message}
                       </p>
                       {

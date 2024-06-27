@@ -114,3 +114,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'type': 'join_request',
             'request': event['request'],
         }))
+
+    async def message_decline(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'decline',
+            'message': event['message'],
+            'message_id': event['message_id'],
+        }))
