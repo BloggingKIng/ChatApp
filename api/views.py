@@ -128,7 +128,16 @@ def accept_or_decline_request(request):
             }
         )
         req.accepted = True
+        notifcation =  Notification.objects.create(user=req.requester, message=f'Your request to join {req.room.name} has been accepted')
+        async_to_sync(channel_layer.group_send)(
+            f"notifications_{req.requester.username}",
+            {
+                "type": "notification.message",
+                "message":NotificationSerializer(notifcation).data
+            }
+        )
     else:
+        
         message = Message.objects.create(sender=req.requester, room=req.room, message=f'A request to join the group from {req.requester.username} has been declined by {request.user.username}', message_type='decline')
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(

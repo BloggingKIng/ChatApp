@@ -10,7 +10,11 @@ import {
   MDBNavbarToggler,
   MDBNavbarBrand,
   MDBCollapse,
-  MDBBadge
+  MDBBadge,
+  MDBDropdown,
+  MDBDropdownItem,
+  MDBDropdownToggle,
+  MDBDropdownMenu,
 } from 'mdb-react-ui-kit';
 import './navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
@@ -21,6 +25,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const loggedIn = JSON.parse(localStorage.getItem('loggedIn'));
   const [user, setUser] = useState({});
+  const [notifications, setNotifications] = useState([]);
   const handleClick = () => {
     if (loggedIn) {
       localStorage.removeItem('loggedIn');
@@ -40,9 +45,35 @@ export default function Navbar() {
       })
   }
 
+  const fetchNotifications = async () => {
+    await api.get(`http://127.0.0.1:8000/api/get-notifications/`)
+      .then((response) => {
+        setNotifications(response.data);
+        console.log(response.data);
+      })
+  }
+
   useEffect(() => {
     fetchUserDetails();
+    fetchNotifications();
   }, [])
+
+  useEffect(()=>{
+    const url = `ws://127.0.0.1:8000/ws/notifications/${user['username']}/`;
+    const notificationSocket = new WebSocket(url);
+    console.log(url)
+    console.log(user)
+    notificationSocket.onmessage = function (e) {
+      const data = JSON.parse(e.data);
+      setNotifications((nots) => [...nots, data.notification]);
+      let newUser =  {...user, notification_count: user['notification_count'] + 1}
+      setUser(newUser);
+      console.log("user")
+      console.log(data);
+      console.log(newUser);
+      console.log("notifications"); 
+    }
+  },[])
   return (
     <>
       <MDBNavbar expand='xl' dark bgColor='primary'>
@@ -66,10 +97,24 @@ export default function Navbar() {
                   Hello, {loggedIn ? user?.username : 'Guest'}
                 </MDBNavbarLink>
               </MDBNavbarItem>
-              <MDBNavbarItem className='bell-container'>
-                <MDBIcon icon='bell' size='1x' color='white' className='bell' />
-                <MDBBadge color='danger' notification pill className='badge'> {user?.notification_count} </MDBBadge>
-              </MDBNavbarItem>
+              {loggedIn && <MDBNavbarItem className='bell-container'>
+                <MDBDropdown dropdown dropleft>
+                  <MDBDropdownToggle tag='a' className='nav-link'>
+                    <MDBIcon icon='bell' size='1x' color='white' className='bell' />
+                    <MDBBadge color='danger' notification pill className='badge'> {user?.notification_count} </MDBBadge>
+                  </MDBDropdownToggle>
+                  <MDBDropdownMenu>
+                    {notifications.map((notification, index) => (
+                      <>
+                      <MDBDropdownItem link key={index} className='notification-item'>
+                        <p>{notification.message}</p>
+                      </MDBDropdownItem>
+                      <MDBDropdownItem divider />
+                      </>
+                    ))}
+                  </MDBDropdownMenu>
+                </MDBDropdown>
+              </MDBNavbarItem>}
               <MDBNavbarItem>
                 <MDBBtn className='me-2 btn-success' type='button' onClick={handleClick}>
                     {loggedIn ? 'Logout' : 'Signup'}

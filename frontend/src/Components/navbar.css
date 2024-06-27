@@ -23,3 +23,13 @@
 .badge {
     margin-top: -5px;
 }
+
+.dropdown-toggle::before{
+    display: none !important;
+}
+
+.dropdown-menu {
+    margin-top: 40px;
+    margin-right: -50px;
+    width: 300px;
+}
