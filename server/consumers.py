@@ -107,3 +107,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message': event['message'],
             'message_id': event['message_id'],
         }))
+    
+    async def join_request(self, event):
+        print('Got a request!')
+        await self.send(text_data=json.dumps({
+            'type': 'join_request',
+            'request': event['request'],
+        }))

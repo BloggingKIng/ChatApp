@@ -17,10 +17,6 @@ class Membership(models.Model):
     def __str__(self):
         return f'{self.user.username} in {self.room.name}'
 
-
-
-
-
 class Message(models.Model):
     sender = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='messages')

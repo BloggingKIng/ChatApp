@@ -172,6 +172,10 @@ export default function Chat() {
     fetchMembers();
   }
 
+  else if (data.type === 'join_request'){
+    console.log('join_request')
+  }
+
   else if (data.type === 'admin'){
     setMessages((prevMessages) => [...prevMessages, {...data.message, message_type: "admin", sender: data.message.sender, sentdate: data.message.sentdate}]);
     fetchMembers();

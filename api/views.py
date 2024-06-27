@@ -8,6 +8,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from users.models import CustomUser
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -71,9 +73,35 @@ def request_group_membership(request):
     try:
         room = Room.objects.get(id=id)
     except ObjectDoesNotExist:
-        return Response({'message':'Room with this id does not exist'},status=status.HTTP_404_NOT_FOUND)
+        return Response({'detail':'Room with this id does not exist'},status=status.HTTP_404_NOT_FOUND)
+
+    isMember = Membership.objects.filter(user=request.user, room=room).exists()
+    if isMember:
+        return Response({'detail':'You are already a member of this group'},status=status.HTTP_400_BAD_REQUEST)
+    alreadyRequested = Requests.objects.filter(requester=request.user, room=room, accepted=False, declined=False).exists()
+    if alreadyRequested:
+        return Response({'detail':'A request from you to join this group is already pending!'},status=status.HTTP_400_BAD_REQUEST)
+    isDeclinedin24hours = Requests.objects.filter(requester=request.user, room=room, declined=True)
+    if (len(isDeclinedin24hours) >= 1) and (sentdate > remainingTime):
+        sentdate = isDeclinedin24hours[0].sentdate
+        remainingTime = timezone.make_aware(datetime.now() - timedelta(hours=24),isDeclinedin24hours[0].sentdate.tzinfo)
+        print('Here huh')
+        sent_date = isDeclinedin24hours[0].sentdate
+        current_time = timezone.now()
+        remaining_time = sent_date + timedelta(hours=24)
+        calculated = (remaining_time - current_time).total_seconds() / 3600
+        calculated = round(calculated,2)
+        return Response({'detail':f'Your previous request to join this group was declined. You will be able to send another request in {calculated} hours'},status=status.HTTP_400_BAD_REQUEST)
     req = Requests.objects.create(requester=request.user, room=room, request_message=f'{request.user.username} wants to join the group', request_type='request')
-    
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"chat_{req.room.id}",
+        {
+            "type": "join.request",
+            "request_id": req.id,
+            "request": RequestSerializer(req).data
+        }
+    )
     return Response(status=status.HTTP_200_OK)
     
 @api_view(['POST'])
@@ -206,6 +234,7 @@ def leave_group(request, room_id):
     
 
     Membership.objects.filter(user=request.user, room=room).delete()
+    Requests.objects.filter(room=room, requester=request.user, accepted=True).delete()
     message = Message.objects.create(sender=request.user, room=room, message=f'{request.user.username} has left the group', message_type='leave')
     print('date')
     print(message.sentdate)
@@ -304,6 +333,8 @@ def remove_member(request):
         )
         membership = Membership.objects.get(user=user, room=room)
         membership.delete()
+        requests = Requests.objects.filter(room=room, requester=user, accepted=True)
+        requests.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     elif requesting_user.username == user_id:
         return Response({'detail':'You can not remove yourself. Please leave instead!'},status=status.HTTP_401_UNAUTHORIZED)

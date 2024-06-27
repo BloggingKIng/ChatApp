@@ -75,6 +75,11 @@ export default function Home() {
       // navigate(`/chatting/${groupId}/`)
       toast.success('Successfully Requested Membership!')
     })
+    .catch((e)=>{
+      console.log(e)
+      toast.error('An error occured!')
+      toast.error(e.response.data.detail)
+    })
     toggleJoinGroupModal();
   };
 
