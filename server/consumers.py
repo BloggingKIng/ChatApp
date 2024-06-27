@@ -61,7 +61,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             audio_data = base64.b64decode(voice)
             voice_instance = await sync_to_async(MessageVoice.objects.create)(message=message, voice=ContentFile(audio_data, name=f'voice.webm'))
             text_data_json["voice"] = [{"id": voice_instance.id, "voice": voice_instance.voice.url}]
-            print(text_data_json)
         await self.send(text_data=json.dumps(text_data_json))
         await self.channel_layer.group_send(
             self.room_group_name, {"type": "chat.message", "message": text_data_json}

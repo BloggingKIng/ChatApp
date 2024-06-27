@@ -2,8 +2,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Room, Membership, Message, Requests, MessageImages, MessageVoice
-from .serializers import RoomSerializer, MembershipSerializer, UserSerializer, MessageSerializer, RequestSerializer
+from .models import Room, Membership, Message, Requests, MessageImages, MessageVoice, Notification
+from .serializers import RoomSerializer, MembershipSerializer, UserSerializer, MessageSerializer, RequestSerializer, NotificationSerializer
 from django.core.exceptions import ObjectDoesNotExist
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -389,3 +389,10 @@ def make_admin(request):
             }
         )
         return Response(status=status.HTTP_200_OK)
+    
+@api_view(['GET'])
+def get_notifications(request):
+    user = request.user
+    notifications = Notification.objects.filter(user=user)
+    serializer = NotificationSerializer(notifications, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

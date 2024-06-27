@@ -9,7 +9,8 @@ import {
   MDBBtn,
   MDBNavbarToggler,
   MDBNavbarBrand,
-  MDBCollapse
+  MDBCollapse,
+  MDBBadge
 } from 'mdb-react-ui-kit';
 import './navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
@@ -45,7 +46,7 @@ export default function Navbar() {
   return (
     <>
       <MDBNavbar expand='xl' dark bgColor='primary'>
-        <MDBContainer fluid>
+        <MDBContainer fluid className='nav-container'>
           
           <MDBNavbarBrand href='/' className='heading'>Echat</MDBNavbarBrand>
           <MDBNavbarToggler
@@ -59,11 +60,15 @@ export default function Navbar() {
             <MDBIcon icon='bars' fas />
           </MDBNavbarToggler>
           <MDBCollapse open={openNavColorThird} navbar>
-            <MDBNavbarNav className='me-auto mb-2 mb-lg-0' style={{justifyContent:'flex-end'}}>
+            <MDBNavbarNav className='me-auto mb-2 mb-lg-0 nav-container-2' style={{justifyContent:'flex-end'}}>
               <MDBNavbarItem style={{marginRight:'15px'}}>
                 <MDBNavbarLink active aria-current='page' href='/' >
                   Hello, {loggedIn ? user?.username : 'Guest'}
                 </MDBNavbarLink>
+              </MDBNavbarItem>
+              <MDBNavbarItem className='bell-container'>
+                <MDBIcon icon='bell' size='1x' color='white' className='bell' />
+                <MDBBadge color='danger' notification pill className='badge'> {user?.notification_count} </MDBBadge>
               </MDBNavbarItem>
               <MDBNavbarItem>
                 <MDBBtn className='me-2 btn-success' type='button' onClick={handleClick}>

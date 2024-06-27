@@ -3,3 +3,23 @@
 .heading {
     font-family: Anton,'sans-serif';
 }
+
+.nav-container-2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bell {
+    cursor: pointer;
+    font-size: 20px;
+    margin: 0 auto;
+}
+
+.bell-container {
+    margin-right: 15px;
+}
+
+.badge {
+    margin-top: -5px;
+}

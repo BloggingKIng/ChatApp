@@ -4,10 +4,12 @@ from django.contrib.auth import get_user_model
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    
+    notification_count = serializers.SerializerMethodField('get_total_notifications')
     class Meta:
         model = get_user_model()
         fields = "__all__"
+    def get_total_notifications(self, obj):
+        return Notification.objects.filter(user=obj, read=False).count()
 
 class RoomSerializer(serializers.ModelSerializer):
     members = UserSerializer(many=True, read_only=True)
@@ -50,6 +52,10 @@ class RequestSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     user = UserSerializer()
+    total_notifications = serializers.SerializerMethodField(method_name="get_total_notifications")
     class Meta:
         model = Notification
-        fields = '__all__'
+        fields = ['id','user', 'message', 'sentdate', 'read', 'total_notifications']
+
+    def get_total_notifications(self, obj):
+        return Notification.objects.filter(user=obj.user).count()
