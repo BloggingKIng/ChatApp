@@ -352,6 +352,14 @@ def remove_member(request):
                 "deleted_guy": user.username
             }
         )
+        notification = Notification.objects.create(user=user,message=f"{requesting_user.username} has removed you from {room.name}!")
+        async_to_sync(channel_layer.group_send)(
+            f"notifications_{user.username}",
+            {
+                "type": "notification.message",
+                "message":NotificationSerializer(notification).data
+            }
+        )
         membership = Membership.objects.get(user=user, room=room)
         membership.delete()
         requests = Requests.objects.filter(room=room, requester=user, accepted=True)
@@ -395,6 +403,14 @@ def make_admin(request):
                 "message_id": message.id,
                 "message": MessageSerializer(message).data,
                 "new_admin": target_user.username
+            }
+        )
+        notification = Notification.objects.create(user=target_user,message=f"Congrats! {requesting_user.username} has made you an admin! You can now manage the group {room.name}!", link=f"/chatting/{room.id}")
+        async_to_sync(channel_layer.group_send)(
+            f"notifications_{target_user.username}",
+            {
+                "type": "notification.message",
+                "message":NotificationSerializer(notification).data
             }
         )
         return Response(status=status.HTTP_200_OK)

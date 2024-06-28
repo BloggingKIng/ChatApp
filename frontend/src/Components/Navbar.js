@@ -19,6 +19,7 @@ import {
 import './navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
+import sound from '../assets/notification-sound.mp3'
 
 export default function Navbar() {
   const [openNavColorThird, setOpenNavColorThird] = useState(false);
@@ -26,6 +27,8 @@ export default function Navbar() {
   const loggedIn = JSON.parse(localStorage.getItem('loggedIn'));
   const [user, setUser] = useState({});
   const [notifications, setNotifications] = useState([]);
+
+  const notificationSound = new Audio(sound);
   const handleClick = () => {
     if (loggedIn) {
       localStorage.removeItem('loggedIn');
@@ -65,9 +68,10 @@ export default function Navbar() {
     console.log(user)
     notificationSocket.onmessage = function (e) {
       const data = JSON.parse(e.data);
-      setNotifications((nots) => [...nots, data.notification]);
+      setNotifications((nots) => [data.notification, ...nots]);
       let newUser =  {...user, notification_count: user['notification_count'] + 1}
       setUser(newUser);
+      notificationSound.play();
       console.log("user")
       console.log(data);
       console.log(newUser);
@@ -137,9 +141,15 @@ export default function Navbar() {
                   <MDBDropdownMenu>
                     {notifications.map((notification, index) => (
                       <>
-                      <MDBDropdownItem key={index} className={notification.read === true ? 'notification-item read' : 'notification-item unread'}>
+                      <MDBDropdownItem key={index} className={notification.read === true ? 'notification-item read' : 'notification-item unread'} 
+                        onClick={() =>{ 
+                          if (notification.read !== true){
+                            updateNotificationStatus(notification.id,true)
+                          }
+                        }}
+                      >
                         <p onClick={() => handleNotificationNavigation(notification.link)} className='notification-text'>{notification.message}</p>
-                        {notification.read ? <MDBIcon icon='envelope' onClick={() => updateNotificationStatus(notification.id, false)} className='me-2 envelope' /> : <MDBIcon icon='envelope-open' className='me-2 envelope' onClick={() => updateNotificationStatus(notification.id, true)} />}
+                        {notification.read ? <MDBIcon icon='envelope' onClick={(e) => {e.stopPropagation(); updateNotificationStatus(notification.id, false)}} className='me-2 envelope' /> : <MDBIcon icon='envelope-open' className='me-2 envelope' onClick={(e) => {e.stopPropagation(); updateNotificationStatus(notification.id, true)}} />}
                       </MDBDropdownItem>
                       <MDBDropdownItem divider />
                       </>

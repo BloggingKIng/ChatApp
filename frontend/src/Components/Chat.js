@@ -14,6 +14,7 @@ import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
 import {ReactMic} from 'react-mic';
 import { FaMicrophone, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
+import messageSound from '../assets/message.mp3'
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -40,6 +41,7 @@ export default function Chat() {
   
   const scroller = useRef(null);
   const navigator = useNavigate();
+  const sound = new Audio(messageSound);
   
   const fetchMessages = () => {
     api
@@ -131,6 +133,11 @@ export default function Chat() {
       const data = JSON.parse(e.data);
       console.log("message");
       console.log(data);
+      try {
+        sound.play();
+      }catch (error) {
+        console.log(error);
+      }
 
       if (data.type === "delete") {
         setMessages((prevMessages) =>
