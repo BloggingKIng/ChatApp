@@ -19,4 +19,5 @@ urlpatterns = [
     path('remove-member/', views.remove_member, name='remove_member'),
     path('make-admin/', views.make_admin, name='make_admin'),
     path('get-notifications/', views.get_notifications, name='get_notifications'),
+    path('update-notification-status/', views.update_notification_status, name='update_notification_status'),
 ]

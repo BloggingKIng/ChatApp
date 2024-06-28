@@ -128,7 +128,7 @@ def accept_or_decline_request(request):
             }
         )
         req.accepted = True
-        notifcation =  Notification.objects.create(user=req.requester, message=f'Your request to join {req.room.name} has been accepted')
+        notifcation =  Notification.objects.create(user=req.requester, message=f'Your request to join {req.room.name} has been accepted', link=f'/chatting/{req.room.id}')
         async_to_sync(channel_layer.group_send)(
             f"notifications_{req.requester.username}",
             {
@@ -402,6 +402,15 @@ def make_admin(request):
 @api_view(['GET'])
 def get_notifications(request):
     user = request.user
-    notifications = Notification.objects.filter(user=user)
+    notifications = Notification.objects.filter(user=user).order_by('-sentdate')
     serializer = NotificationSerializer(notifications, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def update_notification_status(request):
+    notification_id = request.data['notification_id']
+    notification_status = request.data['status']
+    notification = Notification.objects.get(id=notification_id)
+    notification.read = notification_status
+    notification.save()
+    return Response(status=status.HTTP_200_OK)

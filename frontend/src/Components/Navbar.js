@@ -73,7 +73,38 @@ export default function Navbar() {
       console.log(newUser);
       console.log("notifications"); 
     }
-  },[])
+  },[user])
+
+  const handleNotificationNavigation = (link) => {
+    if (link !== "") {
+      navigate(link);
+    }
+  }
+
+  const updateNotificationStatus = async (id, status) => {
+    await api.post(`http://127.0.0.1:8000/api/update-notification-status/`, {notification_id: id, status: status})
+      .then((response) => {
+        let newNots = [];
+        for (let nots of notifications){
+          if (nots.id !== id){
+            newNots.push(nots);
+          }
+          else{
+            newNots.push({...nots, read: status});
+            if (status===true){
+              let newUser =  {...user, notification_count: user['notification_count'] - 1}
+              setUser(newUser);
+            }
+            else{
+              let newUser =  {...user, notification_count: user['notification_count'] + 1}
+              setUser(newUser);
+            }
+          }
+          
+        }
+        setNotifications(newNots);
+      })
+  }
   return (
     <>
       <MDBNavbar expand='xl' dark bgColor='primary'>
@@ -106,8 +137,9 @@ export default function Navbar() {
                   <MDBDropdownMenu>
                     {notifications.map((notification, index) => (
                       <>
-                      <MDBDropdownItem link key={index} className='notification-item'>
-                        <p>{notification.message}</p>
+                      <MDBDropdownItem key={index} className={notification.read === true ? 'notification-item read' : 'notification-item unread'}>
+                        <p onClick={() => handleNotificationNavigation(notification.link)} className='notification-text'>{notification.message}</p>
+                        {notification.read ? <MDBIcon icon='envelope' onClick={() => updateNotificationStatus(notification.id, false)} className='me-2 envelope' /> : <MDBIcon icon='envelope-open' className='me-2 envelope' onClick={() => updateNotificationStatus(notification.id, true)} />}
                       </MDBDropdownItem>
                       <MDBDropdownItem divider />
                       </>

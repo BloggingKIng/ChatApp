@@ -55,7 +55,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     total_notifications = serializers.SerializerMethodField(method_name="get_total_notifications")
     class Meta:
         model = Notification
-        fields = ['id','user', 'message', 'sentdate', 'read', 'total_notifications']
+        fields = ['id','user', 'message', 'sentdate', 'read', 'total_notifications', 'link']
 
     def get_total_notifications(self, obj):
         return Notification.objects.filter(user=obj.user).count()

@@ -53,3 +53,4 @@ class Notification(models.Model):
     message = models.TextField()
     sentdate = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
+    link = models.URLField(max_length=300, default='')
